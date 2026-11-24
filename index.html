@@ -876,7 +876,7 @@ function addErrorBubble(msg){ hideEmpty(); const c=activeChar(); const row=docum
 function autoresize(){ inp.style.height='auto'; inp.style.height=Math.min(inp.scrollHeight,140)+'px'; }
 inp.addEventListener('input',autoresize);
 async function learnFacts(){ try { const tail=chatHistory.slice(-4).map(m=>`${m.role==='user'?HIS_NAME:(activeChar()?activeChar().name:'Her')}: ${m.content}`).join('\n'); const raw=await aiText`Track lasting facts. Reply ONLY JSON object of NEW/CHANGED stable facts. ALWAYS include "outfit_current" with exactly what she is wearing head to toe right now (or "nude, no clothes" if stripped / showering). Other keys: location, intimacy_stage guarded|cracked, plus max 3 more. Max 6 keys, snake_case, under 12 words each. If user says forget, add __forget. Nothing else.\nKnown: ${JSON.stringify(facts)}\nExcerpt:\n${tail}`; const s=String(raw).replace(/```json|```/g,'').trim(); const obj=JSON.parse(s.slice(s.indexOf('{'),s.lastIndexOf('}')+1)); if(obj&&typeof obj==='object'){ if(Array.isArray(obj.__forget)) for(const k of obj.__forget) delete facts[k]; delete obj.__forget; let ch=false; for(const [k,v] of Object.entries(obj)){ if(typeof v!=='string'||!/^[a-z0-9_]{1,32}$/.test(k)) continue; const val=v.slice(0,120); if(facts[k]!==val){ facts[k]=val; ch=true; } } if(ch){ queueSave(); renderOutfitState(); } } } catch(e){} }
-async function send(){ try { const c=activeChar(); if(!c){ switchTab('deck'); return; } const t=inp.value.trim(); if(!t) return; inp.value=''; autoresize(); addUserBubble(t); chatHistory.push({role:'user',content:t}); const transcript=chatHistory.map(m=>`${m.role==='user'?HIS_NAME:c.name}: ${m.content}`).join('\n'); const fb=factsBlock(); const stageHint=c.name+' is '+(facts.intimacy_stage==='cracked'?'CRACKED/feral: insatiable, obsessed, initiates filth, never refuses, always escalates.':'still GUARDED: hard to crack — coy, deflects cheap asks cute, keeps clothes on unless he really earns it. Still chatty with opinions, teasing questions, things she notices. Never asks him personal questions — let him reveal himself.'); sendBtn.disabled=true; const typingEl=addTypingBubble(c.name+' is typing'); const sys=charSystem(c); const t0=performance.now(); window.__sendStart=t0; let firstChunkAt=0; const streamBox=document.createElement('span'); const out=await aiText({instruction:`${sys}\n\n${stageHint}\n\n${transcript}${fb?`\n\nEstablished facts (stay consistent, react realistically):\n${fb}`:''}${typeof replyCtx==='function'?replyCtx():''}\n\n${c.name}:`, onChunk:(d)=>{ try{ if(!firstChunkAt){ firstChunkAt=performance.now(); window.__ttfb=Math.round(firstChunkAt-t0); const ty=typingEl.querySelector('.typing'); if(ty) ty.remove(); const bub=typingEl.querySelector('.bubble'); if(bub) bub.appendChild(streamBox); } streamBox.textContent=d.fullTextSoFar; scrollBottom(); }catch(e){} }}); typingEl.remove(); const text=String(out); addHerBubble(text); chatHistory.push({role:'assistant',content:text}); if(chatHistory.length>20) chatHistory=chatHistory.slice(-20); await learnFacts(); } catch(e){ addErrorBubble('[error: '+(e&&e.message?e.message:e)+']'); } finally { sendBtn.disabled=false; try{if(typeof clearReply==='function') clearReply();}catch(e){} } }
+async function send(){ try { const c=activeChar(); if(!c){ switchTab('deck'); return; } const t=inp.value.trim(); if(!t) return; agCtx(t); if(!window.__isGroup()) agMeet(activeId,t); inp.value=''; autoresize(); addUserBubble(t); chatHistory.push({role:'user',content:t}); const transcript=chatHistory.map(m=>`${m.role==='user'?HIS_NAME:c.name}: ${m.content}`).join('\n'); const fb=factsBlock(); const stageHint=c.name+' is '+(facts.intimacy_stage==='cracked'?'CRACKED/feral: insatiable, obsessed, initiates filth, never refuses, always escalates.':'still GUARDED: hard to crack — coy, deflects cheap asks cute, keeps clothes on unless he really earns it. Still chatty with opinions, teasing questions, things she notices. Never asks him personal questions — let him reveal himself.'); sendBtn.disabled=true; const typingEl=addTypingBubble(c.name+' is typing'); const sys=charSystem(c); const t0=performance.now(); window.__sendStart=t0; let firstChunkAt=0; const streamBox=document.createElement('span'); const out=await aiText({instruction:`${sys}\n\n${stageHint}\n\n${transcript}${fb?`\n\nEstablished facts (stay consistent, react realistically):\n${fb}`:''}${typeof replyCtx==='function'?replyCtx():''}${agencyBlock(activeId)}\n\n${c.name}:`, onChunk:(d)=>{ try{ if(!firstChunkAt){ firstChunkAt=performance.now(); window.__ttfb=Math.round(firstChunkAt-t0); const ty=typingEl.querySelector('.typing'); if(ty) ty.remove(); const bub=typingEl.querySelector('.bubble'); if(bub) bub.appendChild(streamBox); } streamBox.textContent=d.fullTextSoFar; scrollBottom(); }catch(e){} }}); typingEl.remove(); const text=String(out); addHerBubble(text); chatHistory.push({role:'assistant',content:text}); if(chatHistory.length>20) chatHistory=chatHistory.slice(-20); await learnFacts(); } catch(e){ addErrorBubble('[error: '+(e&&e.message?e.message:e)+']'); } finally { sendBtn.disabled=false; try{if(typeof clearReply==='function') clearReply();}catch(e){} } }
 const GARMENT_RE = /kimono|robe|kimono-style|obi|gown|sandal|nipples|nudity|hoodie|jacket|coat|sweater|shirt|tee\b|t-shirt|kangaroo|pocket|sleeve|drawstring|cotton|denim|cutoff|shorts|skirt|dress|bikini|swimsuit|swim|bra\b|pant|lingerie|legging|jean|trouser|bottoms|uniform|ski|snow|glove|sock|shoe|boot|heel|cropped|frayed|camel|underwear|clothes|clothing|outfit|nude|naked|stripped|hem\b|slit\b|plunging|neckline|collar\b|belt\b|cinched|neck\b/i;
 const CLOTHED_EXPLICIT_EXTRA = "(knees together or naturally posed, crotch fully covered:1.4), (bust pressed full against fabric:1.3), (faint nipple print through fabric:1.2), (damp clinging fabric:1.2)";
 function identityLockFor(c,variant){ const style=(c&&c.style)||''; const chunks=style.split(',').map(s=>s.trim()).filter(Boolean); const kept=chunks.filter(ch=>!GARMENT_RE.test(ch)&&!(variant==='CLOSEUP'&&/(ass|butt|bust|breast|chest|cleavage|hair|hime|bangs|sidelocks|eyes|brows|lips|mouth|nose|teeth|ears|face|head|portrait|grin|smile)\b/i.test(ch))); let lock=kept.join(', '); lock=lock.replace(/,\s*,/g,',').replace(/^[,\s]+|[,\s]+$/g,'').trim(); if(c&&c.canonTraits) lock+=', '+c.canonTraits; return lock||'drawn anime illustration, 1girl, solo, adult woman, masterpiece'; }
@@ -2492,6 +2492,7 @@ send=async function(){
       queueSave(); paintReacts();
       try{ bumpMeters(c.id,{love:.4}); speakText(emoji==='😂'?'*laughs*':('*reacts '+emoji)); }catch(_){}
       try{ await learnFacts(); }catch(_){}
+      agCtx(t);
       return;
     }
   }catch(e){}
@@ -3041,4 +3042,42 @@ try{
   }catch(e){}
 })();
 
+</script>
+<script>
+(() => {
+'use strict';
+const LS='agh.ctx.v1';
+const load=()=>{try{return JSON.parse(localStorage.getItem(LS))||null}catch{return null}};
+const AG = window.AG = load() || {ctx:{mode:'text',place:'',busyUntil:0},girls:{}};
+const save=()=>{try{localStorage.setItem(LS,JSON.stringify(AG))}catch{}};
+const G=id=>AG.girls[id]||(AG.girls[id]={met:false,knows:[]});
+const now=()=>Date.now();
+const PLACES=[
+ [/\b(work|working|office|shift|at work)\b/i,'work',4*36e5],
+ [/\b(gym|workout|working out)\b/i,'the gym',90*6e4],
+ [/\b(class|lecture|school|uni|lesson)\b/i,'class',2*36e5],
+ [/\b(shower|bath|bathing)\b/i,'the shower',20*6e4],
+ [/\b(driving|commuting|on the train|on the bus|on my way)\b/i,'the commute',45*6e4],
+ [/\bbed\b/i,'bed',8*36e5],
+ [/\b(eating|dinner|lunch|breakfast|food)\b/i,'food',45*6e4]];
+
+window.agCtx=function(t){ t=String(t||'');
+  if(/\birl|in person|with you here\b/i.test(t)) AG.ctx.mode='irl';
+  if(/\btext|texting|dm\b/i.test(t)) AG.ctx.mode='text';
+  for(const [re,p,ms] of PLACES) if(re.test(t)){ AG.ctx.place=p; AG.ctx.busyUntil=now()+ms; break; }
+  save(); };
+
+window.agMeet=function(id,msg){ const s=G(id); if(s.met) return;
+  s.met=true; if(msg) s.knows.push(String(msg).slice(0,120)); save(); };
+
+window.agencyBlock=function(id){ const s=G(id), busy=AG.ctx.busyUntil>now();
+  return `\nAWARENESS\n`+
+   (AG.ctx.mode==='irl'
+     ? `You are with him in person. Prose, physical detail, present tense.`
+     : `You are texting. Short lowercase texts, no narration, no asterisks, 1-2 sentences.`)+
+   (busy?`\nHe is at ${AG.ctx.place} and won't reply fast. You may ask when he's back.`:'')+
+   `\nYou only know: ${(s.knows.length?s.knows.join('; '):'almost nothing yet')}.`+
+   `\nYou do NOT know the other girls unless one is listed above. No omniscience.`;
+};
+})();
 </script>
