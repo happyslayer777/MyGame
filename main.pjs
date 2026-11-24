@@ -1,0 +1,6 @@
+aiText = {import:ai-text-plugin}
+image = {import:text-to-image-plugin}
+chatSave = {import:kv-plugin}
+$meta
+  title = Kayla, Yuki & Emi — Obsession Deck
+  description = Your personal obsession deck. Chat, edge sessions, snap gallery, canon studio, and shrine mode with Kayla, Yuki, and Emi.
