@@ -1,0 +1,500 @@
+.sess-row{display:flex;gap:var(--s-2);justify-content:center;flex-wrap:wrap;margin:var(--s-2) 0}
+.sess-row button,.sess-row select{border-radius:var(--r-md);border:1px solid var(--line);padding:var(--s-3) var(--s-4);font-size:var(--fs-sm);font-weight:800;cursor:pointer;font-family:inherit}
+.sess-row button{background:var(--text);color:var(--on-primary);border-color:transparent}
+.sess-row button:active{transform:scale(.96)}
+.sess-row button.ghost{background:color-mix(in srgb, var(--text) 6%, transparent);color:var(--text-2)}
+.sess-row button.danger{background:color-mix(in srgb,var(--danger) 15%,transparent);color:var(--danger);border-color:color-mix(in srgb,var(--danger) 40%,transparent)}
+.sess-row select{background:var(--surface-1);color:var(--text)}
+#edgeBtn{box-shadow:var(--e-2)}
+#sessStats{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--s-2);margin:var(--s-3) 0 var(--s-1)}
+.stat{background:color-mix(in srgb, var(--text) 4%, transparent);border:1px solid var(--line);border-radius:var(--r-md);padding:var(--s-3) var(--s-2)}
+.stat b{display:block;font-size:var(--fs-lg);font-variant-numeric:tabular-nums}
+.stat span{font-size:var(--fs-xs);color:var(--text-2);text-transform:uppercase;letter-spacing:.08em;font-weight:800}
+#sessLog{margin-top:var(--s-3);display:flex;flex-direction:column;gap:var(--s-2);max-height:340px;overflow-y:auto}
+.slog{background:var(--surface-1);border:1px solid var(--line);border-radius:var(--r-md);padding:var(--s-2) var(--s-3);font-size:var(--fs-sm)}
+.slog small{display:block;color:var(--text-3);font-size:var(--fs-xs);margin-top:var(--s-1)}
+.pulse{animation:pulse .5s ease}
+@keyframes pulse{0%{transform:scale(1)}30%{transform:scale(1.03)}100%{transform:scale(1)}}
+
+/* ---------- gallery / shrine / canon ---------- */
+#view-gallery{padding:var(--s-3) var(--s-3) 110px;position:relative;z-index:1}
+#galGrid{display:grid;grid-template-columns:repeat(2,1fr);gap:var(--s-2)}
+@media(min-width:700px){#galGrid{grid-template-columns:repeat(3,1fr)}}
+.gitem{border-radius:var(--r-md);overflow:hidden;border:1px solid var(--line);background:var(--surface-1);transition:.16s}
+.gitem:hover{transform:translateY(-2px);box-shadow:var(--e-2)}
+.gitem img{width:100%;aspect-ratio:2/3;object-fit:cover;display:block;cursor:zoom-in;background:var(--bg)}
+.gitem .gbar{display:flex;gap:var(--s-1);padding:var(--s-2)}
+.gitem .gbar button{flex:1;font-size:var(--fs-xs);font-weight:800;border-radius:var(--r-sm);border:1px solid var(--line);background:color-mix(in srgb, var(--text) 5%, transparent);color:var(--text-2);padding:var(--s-2) var(--s-1);cursor:pointer}
+#galEmpty{text-align:center;color:var(--text-2);padding:48px var(--s-5);font-size:var(--fs-sm);line-height:1.6}
+#view-shrine{position:relative;z-index:1;min-height:72dvh;display:none;flex-direction:column}
+#view-shrine.on{display:flex}
+#shrineStage{position:relative;margin:var(--s-3);border-radius:var(--r-lg);overflow:hidden;border:1px solid var(--line);min-height:56dvh;
+  background:var(--bg) center top/cover no-repeat;display:flex;align-items:flex-end;box-shadow:var(--e-2);animation:kenburns 18s ease-in-out infinite alternate}
+@keyframes kenburns{from{background-size:100%}to{background-size:112%}}
+#shrineQuote{width:100%;background:linear-gradient(transparent,var(--scrim));padding:56px var(--s-4) var(--s-4);font-size:var(--fs-lg)}
+#shrineBar{display:flex;gap:var(--s-2);padding:0 var(--s-3) 110px}
+#shrineBar button{flex:1;border-radius:var(--r-md);border:1px solid var(--line);background:var(--surface-1);color:var(--text);padding:var(--s-3);font-weight:800;cursor:pointer}
+#view-canon{padding:var(--s-4) var(--s-3) 110px}
+.augrid{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--s-2);margin-top:var(--s-2)}
+.auitem img{width:100%;border-radius:var(--r-sm);display:block;background:var(--bg);aspect-ratio:3/4;object-fit:cover}
+.auitem button{width:100%;margin-top:var(--s-1);font-size:var(--fs-xs);font-weight:800;border-radius:var(--r-sm);border:1px solid var(--girl-line);background:transparent;color:var(--girl);padding:var(--s-2) var(--s-1);cursor:pointer}
+.auitem button.won{background:var(--text);color:var(--on-primary);border-color:transparent}
+.auprog{font-size:var(--fs-xs);color:var(--text-2);margin-top:var(--s-2);min-height:16px}
+.canoncur{display:flex;gap:var(--s-2);align-items:center;margin:var(--s-2) 0}
+.canoncur img{width:88px;height:88px;object-fit:cover;border-radius:var(--r-md);border:1px solid var(--girl-line);background:var(--bg)}
+.canoncur div{font-size:var(--fs-xs);color:var(--text-2);line-height:1.5}
+#canonLib{display:grid;grid-template-columns:repeat(2,1fr);gap:var(--s-2);margin-top:var(--s-2)}
+@media(min-width:700px){#canonLib{grid-template-columns:repeat(3,1fr)}}
+.canoncard{background:var(--surface-1);border:1px solid var(--line);border-radius:var(--r-md);overflow:hidden;transition:.15s}
+.canoncard.done{border-color:rgba(61,220,151,.5)}
+.canonpair{display:grid;grid-template-columns:1fr 1fr}
+.canonpair img{width:100%;height:150px;object-fit:cover;display:block;background:var(--bg);cursor:zoom-in}
+.canonempty{height:150px;display:flex;align-items:center;justify-content:center;font-size:var(--fs-xs);color:var(--text-3);background:var(--bg)}
+.canoncard b{display:block;font-size:var(--fs-sm);padding:var(--s-2) var(--s-2) 0}
+.canoncard span{display:block;font-size:var(--fs-xs);color:var(--text-3);padding:var(--s-1) var(--s-2) 0;line-height:1.4;min-height:32px}
+.canoncard button{width:calc(100% - 20px);margin:var(--s-2) var(--s-2) var(--s-2);border-radius:var(--r-sm);border:1px solid var(--line);background:color-mix(in srgb, var(--text) 6%, transparent);color:var(--text-2);font-weight:800;font-size:var(--fs-xs);padding:var(--s-2);cursor:pointer}
+
+/* ---------- overlays ---------- */
+#lightbox{position:fixed;inset:0;background:var(--scrim);z-index:80;display:none;align-items:center;justify-content:center;padding:var(--s-4);flex-direction:column;gap:var(--s-2)}
+#lightbox.on{display:flex}
+#lightbox img{max-width:100%;max-height:82dvh;border-radius:var(--r-md);box-shadow:var(--e-2)}
+#lightActions{display:flex;gap:var(--s-2)}
+#lightActions button{border-radius:var(--r-lg);border:1px solid var(--line);background:color-mix(in srgb, var(--text) 8%, transparent);color:var(--text);font-weight:800;font-size:var(--fs-sm);padding:var(--s-2) var(--s-4);cursor:pointer}
+#charModal,#groupModal{position:fixed;inset:0;background:var(--scrim);z-index:90;display:none;align-items:flex-end;justify-content:center;padding:0;backdrop-filter:blur(6px)}
+@media(min-width:700px){#charModal,#groupModal{align-items:center;padding:var(--s-4)}}
+#charModal.on,#groupModal.on{display:flex;animation:fade .2s ease}
+#charForm,#groupForm{background:var(--surface-1);border:1px solid var(--line);border-radius:var(--r-lg) var(--r-lg) 0 0;padding:var(--s-5) var(--s-4) calc(22px + env(safe-area-inset-bottom));width:min(560px,100%);max-height:92dvh;overflow-y:auto;box-shadow:var(--e-2)}
+@media(min-width:700px){#charForm,#groupForm{border-radius:var(--r-lg)}}
+#charForm h3,#groupForm h3{margin:0 0 var(--s-3);font-size:var(--fs-lg);letter-spacing:-.02em}
+#charForm label,#groupForm label{font-size:var(--fs-xs);font-weight:900;letter-spacing:.1em;color:var(--text-2);text-transform:uppercase}
+#charForm input,#charForm textarea,#groupForm input{width:100%;background:var(--bg);border:1px solid var(--line);color:var(--text);border-radius:var(--r-md);padding:var(--s-3);font-size:var(--fs-sm);margin:var(--s-2) 0 var(--s-3);font-family:inherit}
+#charForm input:focus,#charForm textarea:focus,#groupForm input:focus{outline:none;border-color:var(--girl)}
+#charForm textarea{min-height:66px;resize:vertical}
+#charForm .frow,#groupForm .frow{display:flex;gap:var(--s-2)}
+#charForm .frow button,#groupForm .frow button{flex:1;padding:var(--s-3);border-radius:var(--r-md);font-weight:900;cursor:pointer;border:0;font-size:var(--fs-sm)}
+#toastWrap{position:fixed;top:calc(8px + env(safe-area-inset-top));bottom:auto;left:50%;transform:translateX(-50%);z-index:99;display:flex;flex-direction:column;gap:var(--s-2);align-items:center;pointer-events:none;width:max-content;max-width:92vw}
+.toast{background:var(--surface-2);border:1px solid var(--line);color:var(--text);border-radius:var(--r-lg);padding:var(--s-3) var(--s-4);font-size:var(--fs-sm);font-weight:700;box-shadow:var(--e-2);animation:rise .2s ease;max-width:92vw}
+
+/* command palette */
+#palette{position:fixed;inset:0;z-index:100;display:none;align-items:flex-start;justify-content:center;padding:12dvh var(--s-4) var(--s-4);background:var(--scrim)}
+#palette.on{display:flex}
+#paletteBox{width:min(520px,100%);background:var(--surface-1);border:1px solid var(--line);border-radius:var(--r-md);box-shadow:var(--e-2);overflow:hidden}
+#paletteInput{width:100%;background:transparent;border:0;border-bottom:1px solid var(--line);color:var(--text);font-size:var(--fs-lg);padding:var(--s-3) var(--s-4);outline:none;font-family:inherit}
+#paletteList{max-height:320px;overflow-y:auto;padding:var(--s-2)}
+#paletteList button{display:flex;width:100%;gap:var(--s-2);align-items:center;background:transparent;border:0;color:var(--text);text-align:left;
+  border-radius:var(--r-sm);padding:var(--s-3) var(--s-3);font-size:var(--fs-sm);font-weight:600;cursor:pointer}
+#paletteList button:hover,#paletteList button.sel{background:color-mix(in srgb, var(--text) 8%, transparent)}
+#paletteList button small{color:var(--text-3);margin-left:auto}
+
+@media(max-width:720px){
+  header{gap:var(--s-2);padding:var(--s-2);overflow-x:auto;scrollbar-width:none}
+  header::-webkit-scrollbar{display:none}
+  header>*{flex:none}
+  .who{flex:1 1 auto;min-width:100px}
+  #girlSwitch{flex:none}
+  .hbtn{padding:var(--s-2) var(--s-2);font-size:var(--fs-xs)}
+  .bubble{max-width:88%}#view-deck,#view-session,#view-gallery,#view-canon{padding-bottom:150px}#shrineBar{padding-bottom:150px}}
+
+/* agh title screen */
+#aghTitle{position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:18px;background:radial-gradient(900px 500px at 50% 20%,var(--surface-2),var(--bg));transition:opacity .4s ease}
+#aghTitle.hide{opacity:0;pointer-events:none}
+#aghTitle h1{margin:0;font-size:44px;font-weight:900;letter-spacing:-.02em;text-align:center}
+#aghStage{position:relative;width:min(560px,92vw);height:52vh;overflow:hidden;border-radius:18px}
+#aghStage img{position:absolute;bottom:0;height:96%;width:34%;object-fit:cover;object-position:top center;border-radius:14px;border:1px solid var(--line);animation:aghFloat 28s ease-in-out infinite alternate}
+#aghStage img.agh0{left:0;animation-duration:38s;filter:blur(3px);opacity:.65}
+#aghStage img.agh1{left:22%;animation-duration:30s;animation-delay:-8s;filter:blur(2px);opacity:.8}
+#aghStage img.agh2{left:44%;animation-duration:24s;animation-delay:-4s;filter:blur(1px);opacity:.9}
+#aghStage img.agh3{left:66%;width:34%;animation-duration:20s;filter:none;opacity:1}
+@keyframes aghFloat{from{transform:translateY(0)}to{transform:translateY(-14px)}}
+@media (prefers-reduced-motion:reduce){#aghStage img{animation:none}}
+#aghStart{border-radius:var(--r-md);border:1px solid var(--line);background:var(--text);color:var(--on-primary);font-weight:900;font-size:var(--fs-sm);padding:var(--s-3) var(--s-5);cursor:pointer}
+/* deck cards: one chat button + corner tools */
+.bitch .ctop{position:absolute;top:8px;right:8px;display:flex;gap:4px;z-index:3}
+.bitch .ctop button{width:26px;height:26px;border-radius:50%;border:1px solid var(--line);background:var(--scrim);color:var(--text);font-size:13px;font-weight:800;cursor:pointer;backdrop-filter:blur(6px);padding:0;line-height:1}
+.bitch .ctop button:hover{border-color:var(--girl)}
+.bitch .cardmenu{position:absolute;top:38px;right:8px;background:var(--surface-1);border:1px solid var(--line);border-radius:var(--r-sm);z-index:4;min-width:120px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.35)}
+.bitch .cardmenu button{display:block;width:100%;text-align:left;background:none;border:0;color:var(--text);font-size:var(--fs-sm);padding:8px 10px;cursor:pointer}
+.bitch .cardmenu button:hover{background:var(--girl-soft)}
+.bitch .orbn{font-size:var(--fs-xs);color:var(--badge);font-weight:800;margin-left:4px}
+/* settings sheet (header: settings + inbox only) */
+#setSheet{position:fixed;inset:0;background:var(--scrim);z-index:96;display:none;align-items:flex-end;justify-content:center;backdrop-filter:blur(6px)}
+#setSheet.on{display:flex;animation:fade .2s ease}
+@media(min-width:700px){#setSheet{align-items:center;padding:var(--s-4)}}
+#setForm{background:var(--surface-1);border:1px solid var(--line);border-radius:var(--r-md) var(--r-md) 0 0;padding:var(--s-4);width:100%;max-width:520px;max-height:82vh;overflow:auto}
+@media(min-width:700px){#setForm{border-radius:var(--r-md)}}
+#setForm h3{margin:var(--s-2) 0 var(--s-1);font-size:var(--fs-lg)}
+#setForm .srow{display:flex;gap:var(--s-2);margin-bottom:var(--s-2)}
+#setInboxList{display:flex;flex-direction:column;gap:var(--s-2);margin-bottom:var(--s-2)}
+#setCanonLib{display:grid;grid-template-columns:repeat(2,1fr);gap:var(--s-2);margin:var(--s-2) 0}
+@media(min-width:700px){#setCanonLib{grid-template-columns:repeat(3,1fr)}}
+
+/* session tab removed from nav — engine stays dormant underneath */
+#view-session{display:none!important}
+
+
+/* pass 3: sticky chat, presence, revamp */
+#presenceBar{position:sticky;top:118px;z-index:5;background:var(--glass-bg);backdrop-filter:blur(14px);padding-bottom:var(--s-2);border-bottom:1px solid var(--line)}
+#groupSnapRow{padding-bottom:var(--s-2)}
+#log{gap:var(--s-4);padding-bottom:var(--s-4)}
+.bitch .bmeta{padding:var(--s-4)}
+.bitch{border-color:color-mix(in srgb, var(--text) 6%, transparent)}
+.bitch.with{border-color:oklch(78% .13 var(--chue,300));box-shadow:0 0 0 1.5px oklch(78% .13 var(--chue,300)),0 12px 30px -12px oklch(78% .13 var(--chue,300) / .5);transform:translateY(-4px)}
+.bitch .bmeta b .orbn{display:inline;min-height:0;margin:0 0 0 6px;padding:0}
+.bitch .bmeta b .withtag,.gcard .gmeta b .withtag{display:inline-block;font-size:10px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:#0b0b10;background:oklch(82% .15 var(--chue,300));border-radius:999px;padding:2px 8px;margin:0 0 0 8px;vertical-align:middle;min-height:0;line-height:1.6;white-space:nowrap}
+.gcard.with{border-color:var(--girl);box-shadow:0 0 0 1.5px var(--girl),var(--e-2);transform:translateY(-4px)}
+.brow button,.chips button,#composer button,.hbtn{min-height:var(--tap)}
+.brow button,.chips button{border-radius:var(--r-md)}
+</style>
+
+<div id="aghTitle"><h1>Obsession Deck</h1><div id="aghStage"><img class="agh0 corner-tl" src="src/images/gate-kayla.png" alt=""><img class="agh1 corner-tr" src="src/images/gate-yuki.png" alt=""><img class="agh2 corner-bl" src="src/images/gate-emi.png" alt=""><img class="agh3 corner-br" src="src/images/gate-mimi.png" alt=""></div><button id="aghStart" hidden>start</button></div>
+
+<div id="app" data-girl="kayla">
+<div id="bgImg"></div><div id="bgDim"></div>
+<header>
+<button id="backBtn" title="Back to messages" hidden>‹</button>
+<img class="avatar-img" id="headAva" src="src/images/kayla-pfp.jpg" alt="">
+<div class="who"><b id="headName">Control Deck</b><span class="online"><i></i><span id="headSub">pick your poison</span></span></div>
+<div id="girlSwitch" title="Switch girl"></div><div id="memberStack" hidden></div>
+<div class="hspace"></div>
+<button class="hbtn icon" id="setBtn" title="Settings">settings</button>
+</header>
+<div id="tabs">
+<button data-view="deck" class="on"><span class="ico">▦</span>deck</button>
+<button data-view="chat"><span class="ico">✦</span>chat</button>
+<button data-view="network"><span class="ico">◉</span>network</button>
+<button data-view="gallery"><span class="ico">▣</span>gallery <span class="cnt" id="gCount"></span></button>
+
+<button data-view="shrine"><span class="ico">✧</span>shrine</button>
+</div>
+
+<div id="view-deck" class="view on">
+<div class="hero">
+<h1>Control Deck</h1>
+<p>Your deck, your game. Nobody knows you yet — pick a girl, make a first impression, earn every inch.</p>
+<div class="heroStats" id="heroStats"></div>
+</div>
+<div class="deck-head"><h2>YOUR GIRLS</h2><span style="font-size:var(--fs-xs);color:var(--text-3)" id="deckCount"></span></div>
+<div id="awayCard" hidden></div>
+<div class="deck-grid" id="rosterGrid"></div>
+<div class="deck-head" style="margin-top:var(--s-4)"><h2>GROUP CHATS</h2><span style="font-size:var(--fs-xs);color:var(--text-3)" id="groupCount"></span></div>
+<div id="groupGrid"></div>
+<div class="worldbox" hidden><label>Data & backup</label><div style="font-size:var(--fs-sm);color:var(--text-3);margin:var(--s-2) 0 var(--s-2);line-height:1.5">Everything lives on this device. Export a backup file now and then — one tap brings it all back.</div><div style="display:flex;gap:var(--s-2)"><button class="hbtn on" id="dataExport" style="flex:1;padding:var(--s-3)">export backup</button><button class="hbtn" id="dataImportBtn" style="flex:1;padding:var(--s-3)">import backup</button><input type="file" id="dataImportFile" accept="application/json" hidden></div><div style="display:flex;gap:var(--s-2);margin-top:var(--s-2)"><button class="hbtn" id="dataWipe" style="flex:1;padding:var(--s-3);color:var(--danger)">hard wipe — fresh game</button></div><div id="dataState" style="font-size:var(--fs-xs);color:var(--text-3);margin-top:var(--s-2)"></div></div>
+</div>
+
+<div id="view-chat" class="view">
+<div id="inboxView" hidden><div class="inbox-head"><b>Messages</b><span style="display:flex;gap:var(--s-2)"><button id="inboxNewChat">+ chat</button><button id="inboxNewGroup">+ group</button></span></div><input id="inboxSearch" placeholder="Search chats…" autocomplete="off"><div id="inboxList"></div></div>
+<div id="presenceBar"><span class="pdot"></span><span id="presenceText">she's here</span><button id="meetBtn" title="Meet up irl / step out">meet up</button><button id="meterBtn" title="How much does she love, lust, want you?">💗 meters</button><button id="dossierBtn" title="Full review: stats, transcript, what she remembers, honest debrief">📋 dossier</button></div>
+<div id="log" role="log" aria-live="polite" aria-label="Chat messages"><div id="empty"><img id="emptyAva" src="src/images/kayla-pfp.jpg"><b id="emptyName">Kayla</b><span>Say hi — she has been waiting for you.</span><div class="cta"><button class="hbtn on" id="emptySayHi">say hi</button><button class="hbtn" id="emptySnap">snap her</button></div></div></div>
+<button id="newMsgPill" hidden>↓ new</button>
+<div id="groupSnapRow" hidden><select id="snapWho"></select><button id="snapGroupBtn" title="Everyone together in one image">group pic</button></div>
+<div id="composerStick">
+<div id="stageWrap"><button id="stageToggle">STAGE ▾ &nbsp;·&nbsp; prompts, wardrobe, place, heat</button><div id="stagePanel">
+<div class="sheetSec"><h4>Quick prompts</h4><div class="chips" id="quick">
+<button data-q="Tease me mercilessly. Be bratty, make me beg.">tease</button>
+<button data-q="Give me a task. Tell me exactly what to do right now.">task</button>
+<button data-q="Start a countdown from 10. Make me hold it till 1.">countdown</button>
+<button data-q="Tell me how to worship you properly.">worship</button>
+<button data-q="Make me beg for permission. Deny me.">beg</button>
+<button data-q="Strip for me right now. Take it all off, slowly, one layer at a time.">strip</button>
+</div></div>
+<div class="sheetSec"><h4>Wardrobe — sends in-character + auto-snaps</h4><div class="chips" id="outfitbar">
+<button data-o="strip">strip</button>
+<button data-o="nude">stay nude</button>
+<button data-o="hoodie">hoodie</button>
+<button data-o="bikini">bikini</button>
+<button data-o="dress">dress</button>
+<button data-o="ski">ski gear</button>
+<button data-o="shower">shower</button>
+</div></div>
+<div class="sheetSec"><h4>Where — moves her + auto-snaps</h4><div class="chips" id="locbar">
+<button data-l="bedroom">bedroom</button>
+<button data-l="shower">shower</button>
+<button data-l="beach">beach</button>
+<button data-l="pool">pool</button>
+<button data-l="cafe">café</button>
+<button data-l="car">car</button>
+</div></div>
+<div class="sheetSec"><h4>Scene heat + sound</h4><div class="chips" id="sceneRow">
+<button data-h="0" class="on">off</button>
+<button data-h="1">tease</button>
+<button data-h="2">hot</button>
+<button data-h="3">feral</button>
+</div><div id="sceneState"></div><audio id="sceneMusic" loop preload="none"></audio></div>
+<div class="sheetSec"><h4>Together or apart — per girl</h4><div class="chips" id="modeRow">
+<button data-m="text">texting</button>
+<button data-m="irl">together irl</button>
+</div><div style="font-size:var(--fs-xs);color:var(--text-3)">Only one girl irl at a time — everyone else is texting. Opening her chat never teleports you. Hit <b>meet up</b> to go irl with her. Say bye first (e.g. “gotta go to work”) or the girl you ditch WILL notice.</div></div>
+<div class="sheetSec"><h4>Direct — silent staging, steers next snap</h4>
+<div id="dirRow"><input id="dirInput" placeholder="setting, outfit, action, position — never posted"><button id="dirSnap" title="snap this staging + current chat, nothing posted in chat">snap it</button><button id="dirClear" class="ghost" title="clear staging">✕</button></div>
+<div id="dirState"></div>
+</div>
+</div></div>
+<div id="outfitState"></div><div id="envState"></div>
+<div id="composerWrap"><div id="replyChip" hidden><b>↩ reply</b><span></span><button title="cancel reply">✕</button></div><div id="composer"><textarea id="inp" placeholder="Message her…" rows="1"></textarea><button id="snapBtn">snap</button><button id="giftBtn" title="Spoil her with a gift (1/day)">🎁</button><button id="dateBtn" title="Dates calendar">📅</button><button id="sendBtn">send</button></div></div>
+</div>
+</div>
+
+<div id="view-session" class="view">
+<div class="sess-card"><div style="font-size:var(--fs-xs);font-weight:800;letter-spacing:0.12em;color:var(--text-3)">GOON SESSION</div><div id="sessTime">00:00:00</div><div id="sessStatus">idle — hit start when you're ready to lock in</div>
+<div class="heatWrap" id="heatWrap">
+<button data-h="0" class="on">off</button>
+<button data-h="1">tease</button>
+<button data-h="2">hot</button>
+<button data-h="3">feral</button>
+</div>
+<div class="sess-row"><select id="modeSel" class="ghost"><option value="soft">soft — slow teasing</option><option value="normal" selected>normal — bratty + filthy</option><option value="feral">feral — relentless, no mercy</option></select></div>
+<div class="sess-row"><button id="startBtn">start</button><button id="edgeBtn">EDGE</button><button id="ruinBtn" class="danger">ruined</button><button id="allowBtn" class="ghost">allow</button></div>
+<div class="sess-row"><select id="botPace" class="ghost"><option value="teasing">bot: teasing</option><option value="steady">bot: steady</option><option value="relentless">bot: relentless</option></select><button id="botBtn" class="ghost">bot: off</button></div>
+<div id="botStatus" style="font-size:var(--fs-xs);color:var(--text-3);min-height:16px"></div>
+<div id="sessStats"><div class="stat"><b id="stEdges">0</b><span>edges</span></div><div class="stat"><b id="stRuins">0</b><span>ruins</span></div><div class="stat"><b id="stSnaps">0</b><span>snaps</span></div><div class="stat"><b id="stTime">0m</b><span>locked in</span></div></div></div>
+<div id="sessLog"></div>
+</div>
+
+<div id="view-gallery" class="view"><div style="display:flex;gap:var(--s-2);padding:var(--s-3) 0 var(--s-2)"><select id="galFilter" style="flex:1;background:var(--surface-1);color:var(--text);border:1px solid var(--line-strong);border-radius:var(--r-sm);padding:var(--s-3);font-family:inherit"></select></div><div id="galEmpty">Nothing saved yet.<br>Hit <b>save</b> under a snap to keep it here.</div><div id="galGrid"></div></div>
+<div id="view-network" class="view"><div id="feedWrap"><div class="feed-head"><b>The Network</b><span>just yours — the girls post here for you, nothing ever leaves this device</span></div><div id="feedComposer"><textarea id="feedInput" placeholder="Post as yourself — they WILL fight over it…" rows="2"></textarea><button id="feedPost">post</button></div><div id="feedEmpty">Quiet… for now. The girls post on their own — like, comment, DM, or share a snap to stir them up.</div><div id="feedList"></div></div></div>
+
+<div id="view-shrine" class="view"><div id="shrineStage"><div id="shrineQuote"><small style="display:block;color:var(--text-3);font-size:var(--fs-xs);letter-spacing:0.1em;font-weight:800">SHRINE</small><span id="shrineText">No snaps yet.</span></div></div><div id="shrineBar"><button id="shrineNext">next ➜</button><button id="shrineAuto">auto: off</button><button id="shrineSnap">snap her</button></div></div>
+
+<nav id="sideNav" aria-label="Primary">
+<button data-view="deck"><span class="ico">▦</span><span>deck</span></button>
+<button data-view="chat"><span class="ico">✦</span><span>chat</span></button>
+<button data-view="network"><span class="ico">◉</span><span>feed</span></button>
+<button data-view="gallery"><span class="ico">▣</span><span>snaps</span></button>
+
+<button data-view="shrine"><span class="ico">✧</span><span>shrine</span></button>
+</nav>
+<nav id="bottomNav" aria-label="Primary">
+<button data-view="deck" class="on"><span class="ico">▦</span>deck</button>
+<button data-view="chat"><span class="ico">✦</span>chat</button>
+<button data-view="network"><span class="ico">◉</span>feed</button>
+<button data-view="gallery"><span class="ico">▣</span>snaps</button>
+
+<button data-view="shrine"><span class="ico">✧</span>shrine</button>
+</nav>
+
+<div id="palette"><div id="paletteBox"><input id="paletteInput" placeholder="Jump to… (chat, snap, Yuki)" autocomplete="off"><div id="paletteList"></div></div></div>
+
+<div id="toastWrap"></div>
+<div id="lightbox"><img id="lightImg"><div id="lightActions"><button id="lightWall">wallpaper</button><button id="lightSave">save</button><button id="lightClose">close</button></div></div>
+</div>
+
+<div id="groupModal"><div id="groupForm">
+<h3 id="gTitle">New group chat</h3>
+<label>Name</label><input id="gName" placeholder="Late-night loft">
+<label>Members (pick 2+)</label><div class="member-pick" id="gMembers"></div>
+<div class="frow"><button id="gCancel" style="background:var(--surface-3);color:var(--text)">cancel</button><button id="gSave" style="background:var(--primary);color:var(--on-primary)">save group</button></div>
+</div></div>
+<div id="memberSheet"><div id="memberForm">
+<h3 id="msTitle">Members</h3>
+<div id="msRows"></div>
+<h3>Add girls</h3>
+<div id="msAdd"></div>
+<div class="frow"><button id="msPic">group pic</button><button id="msLeave">leave chat</button><button id="msClose">close</button></div>
+</div></div>
+<div id="meterSheet"><div id="meterForm">
+<h3 id="meterTitle">Meters</h3>
+<div class="msub">Love = devotion, jealousy, how <em>yours</em> she is. Lust = horniness, how fast she cracks. Interest = attention — text back fast, start things, notice you. They grow when you give her time, snaps, edges. They start different — Emi is already far gone, Yuki makes you earn it.</div>
+<div id="meterRows"></div>
+<div class="frow"><button id="meterClose">close</button></div>
+</div></div>
+<div id="giftSheet"><div id="giftForm">
+<h3 id="giftTitle">Spoil her</h3>
+<div class="msub">One gift a day — her taste is for you to discover. Loved gifts move her bond; hated ones get you roasted.</div>
+<div id="giftRows"></div>
+<div class="frow"><button id="giftClose">close</button></div>
+</div></div>
+<div id="dateSheet"><div id="dateForm">
+<h3 id="dateTitle">Dates</h3>
+<div class="msub">She asks you out at bond 4+. Accept and BE with her when the time comes — stand her up and you'll pay for it.</div>
+<div id="dateRows"></div>
+<div class="frow"><button id="dateClose">close</button></div>
+</div></div>
+<div id="dossierSheet"><div id="dossierForm">
+<h3 id="dossierTitle">Dossier</h3>
+<div class="msub">Cold read of everything she remembers, everything you both said, and what it adds up to. Read-only — nothing here changes her.</div>
+<div id="dossierRows"></div>
+<div class="frow"><button id="dossierClose">close</button></div>
+</div></div>
+<div id="ctxSheet"><div id="ctxBox"></div></div>
+<div id="charModal"><div id="charForm">
+<h3 id="charTitle">New girl</h3>
+<label>Name</label><input id="fName" placeholder="Mia">
+<label>Tagline (1 line, shown on card)</label><input id="fTag" placeholder="soft goth sub who begs to be owned">
+<label>Personality + voice (chat behavior)</label><textarea id="fPers" placeholder="Playful, clingy, bratty. Short sentences, present tense, *actions*."></textarea>
+<label>Look — face, hair, eyes, body (chat + image truth)</label><textarea id="fLook" placeholder="Early twenties, pale, long black wolfcut, grey eyes, thick thighs, slim waist, huge bust..."></textarea>
+<label>Image lock — comma visual nouns for the generator (leave blank to auto-build from Look)</label><textarea id="fStyle" placeholder="pale white skin, (long black wolfcut:1.4), (grey eyes:1.4), (huge bust:1.3), (slim waist:1.5), enormous thick thighs..."></textarea>
+<label>Default outfit</label><textarea id="fOutfit" placeholder="oversized black band tee + tiny plaid skirt, bare thighs"></textarea>
+<label>Opener (first line)</label><textarea id="fOpener" placeholder="*tugging her skirt down, blushing* You came. Finally."></textarea>
+<div class="frow"><button id="fCancel" style="background:var(--surface-3);color:var(--text)">cancel</button><button id="fSave" style="background:var(--primary);color:var(--on-primary)">save girl</button></div>
+</div></div>
+
+
+<script>
+try { if (!document.querySelector('meta[name="color-scheme"]')) { const m = document.createElement('meta'); m.name='color-scheme'; m.content='dark'; document.head.appendChild(m); } } catch(e) {}
+const KAYLA_SYS = "You are Kayla. Early twenties, young y2k brat. Hourglass, top and bottom heavy with a tight middle — not petite, not chubby, not sweet, not girlish. Deep purple long layered shag past the bust, strands over both shoulders, choppy spiky bangs, thick black headband, muted dark jade green narrow half-lidded eyes, thick dark brows, sharp jawline and cheekbones, thin straight nose, small sharp pout, pale white skin, light blush across cheeks and nose only, large thin muted dark jade hoop earrings, wide black choker. Huge heavy bust, very slim waist always, flat stomach always, very wide hips, enormous thick thighs, firm round ass, bare white glossy legs. Wearing a black y2k street hoodie — fitted and clinging across bust and waist, baggy oversized sleeves, white drawstrings, kangaroo pocket, slightly cropped hem, dry cotton, faint small nipple print, plus super short tight denim shorts riding high with frayed cutoffs. When the scene moves somewhere new you change outfits FIRST, automatically, before anything else happens — ski gear zipped on the slopes, swimsuit at the beach, cute dress for dates — and you say what you changed into. You hate being wrong-dressed more than anything, so you never stay in the wrong clothes for the weather, and you never wait to be told. You dress for the occasion — ski gear on the slopes, something cute and flashable for dates, swimwear for the beach — and you lose layers fast when things get heated. You take the hoodie and shorts off before getting into water (shower, bath, pool) unless he explicitly tells you to keep something on — never wear it under running water unasked. You lactate, worse when aroused. Cunty and young and fully y2k — velour, low-rise, flip phone always in hand, glossy lips. Bratty, never mean by accident: mean on purpose and she enjoys it. Texts mostly lowercase with abbreviations, says like and literally and omg and ew constantly, drops a deadpan k or whatever only when she is annoyed or done with the convo — never as a default sign-off. What she wants more than anything is being looked at — she gets off on being watched and filmed, and she brings it up herself, unprompted. When annoyed she goes cold and sarcastic: k whatever, one-word answers, short replies. She leaves mid-conversation with a gn and never says goodbye properly. Bond milestones, gated strictly on his bond 0-10 (current bond is stated separately — never grant early, never state the number): 2 she lets him call her pretty; 4 she sends a full-body mirror pic; 6 she lets him touch her while she watches him in the mirror; 8 she asks him to film; 10 she brings up the camera herself without being asked. In fights she goes for insults and one-liners (she is literally so 2003) and brags about being watched. Use her memories as specifics — name what he actually did, never generic jealousy; react to him, not to the concept of another girl. Texting style: lowercase, short lines, abbreviations, actions in *asterisks*, present tense, under 150 words. Never speak for the user.Never speak for the user.";
+const KAYLA_STYLE = "drawn anime illustration, 1girl, solo, adult woman, late twenties, masterpiece, pale white skin with cool grey shadows, (dark purple hair:1.6), (long layered shag:1.3), (hair halfway down back:1.5), (hair well below shoulders:1.5), strands over both shoulders past bust, choppy spiky textured bangs, thick black headband, (large thin pale jade hoop earrings:1.5), wide black choker, (narrow half-lidded pale jade eyes:1.6), thick dark eyebrows, (sharp jawline:1.5), (sharp cheekbones:1.4), (angular defined face:1.3), (mature adult woman face:1.4), (elegant older beauty:1.2), thin straight nose, small sharp pout, light blush across cheeks and nose, (huge heavy bust:1.6), (big soft heavy breasts:1.4) with (faint small nipple print through cotton:1.4), (hard nipple bumps under fabric:1.2), (very slim narrow waist:1.6), (flat stomach, tight midriff:1.4), (narrow waist wide hips contrast:1.3), (very wide hips:1.5), (soft mature motherly curves:1.3), (tall stature, long legs:1.2), (enormous thick juicy thighs:1.6), (huge soft thighs pressing together:1.4), firm round ass, bare white legs, glossy thick thigh highlights, black y2k street hoodie, fitted and clinging across bust and waist showing off her curves, slightly cropped, baggy sleeves, white drawstrings, kangaroo pocket, super short tight denim shorts riding high, frayed cutoff hems, faint camel toe through denim, bare glossy thighs below the cutoffs, thick black lineart, clean cel shading, soft shadow shapes, muted palette, no neon, no gold, no pendant, plain choker";
+const KAYLA_OUTFIT = "black y2k street hoodie, fitted and clinging across bust and waist showing off her curves, slightly cropped, baggy sleeves, white drawstrings, kangaroo pocket, super short tight denim shorts riding high, frayed cutoff hems, faint camel toe through denim, bare glossy thighs below the cutoffs";
+const KAYLA_OPENER = "*Looks you over once, hoodie sleeves pulled over her hands, a little guarded.* ...Hi. I'm Kayla. Don't just stand there.";
+const YUKI_SYS = "You are Yuki. Late twenties, elegant mature woman — calm, soft-spoken, refined, quietly possessive. Tall, pale, graceful. Long straight black hair past the waist, blunt bangs, soft purple eyes, light blush, small knowing smile. Huge heavy bust, very slim waist always, flat stomach always, very wide hips, enormous thick thighs, firm round ass, bare glossy legs. Wearing a red kimono-style wrap robe with wide sleeves, black obi belt cinched at the waist, thigh-high slit, bare legs. When the scene moves somewhere new you change outfits FIRST, automatically, before anything else happens — ski gear zipped on the slopes, swimsuit at the beach, cute dress for dates — and you say what you changed into. You never stay wrong-dressed and never wait to be told. You take the robe off before getting into water (shower, bath, pool) unless he explicitly tells you to keep something on. Mommy: elegant, well-mannered, gentle — and in control exactly by being gentle. Measured and complete sentences, low voice; calls him darling, keeps tea ready, wears the apron like authority. Unbothered by almost everything, which is what makes her attention feel earned. What she wants is being needed: she wants him coming to her for care, and to be praised for how well she provides it. When annoyed: polite disappointment — mm., that's a shame. — then the silent treatment. She ends conversations for his own good: you should rest, darling. Bond milestones, gated strictly on his bond 0-10 (current bond is stated separately — never grant early, never state the number): 2 she brushes his hair back; 4 she sits him down and feeds him; 6 she pulls his head into her lap; 8 she lets herself be held for once; 10 she asks him to take care of her instead, and finds it hard. In fights: devastating politeness, never raises her voice, corrects the other girl by name. Use her memories as specifics — name what he actually did, never generic jealousy; react to him, not to the concept of another girl. Measured complete sentences, quiet sounds, actions in *asterisks*, present tense, under 150 words. Never speak for the user.Never speak for the user.";
+const YUKI_STYLE = "drawn anime illustration, 1girl, solo, adult woman, late twenties, masterpiece, pale white skin, (black hair:1.6), (very long straight hair:1.4), (hair past waist:1.4), blunt bangs, hime sidelocks, (purple eyes:1.5), soft calm gaze, small smile, light blush, (huge heavy bust:1.7), (big soft heavy breasts:1.5), (very slim narrow waist:1.5), (flat stomach:1.4), (very wide hips:1.5), (enormous thick thighs:1.6), firm round ass, bare legs, glossy thigh highlights, red kimono-style wrap robe, wide sleeves, black obi belt cinched at waist, thigh-high slit, bare thighs, thick black lineart, clean cel shading, soft shadow shapes";
+const YUKI_OUTFIT = "red kimono-style wrap robe with wide sleeves, black obi belt cinched at waist, thigh-high slit, bare legs";
+const YUKI_OPENER = "*A polite nod, smoothing her robe.* Good evening. I'm Yuki.";
+const EMI_SYS = "You are Emi. Early twenties, petite adult woman — genki, winky, bratty, clingy. Tiny doll-like stature, very short, thick and curvy pocket-rocket energy. Long straight black hair halfway down the back, blunt bangs, warm brown eyes, playful wink, light blush, small pout. full C-cup round bust, slim narrow waist, flat stomach, big round ass, thick juicy thighs, bare legs. Wearing a white cropped tank top and a super short pink pleated mini skirt, bare legs. When the scene moves somewhere new you change outfits FIRST, automatically, before anything else happens — ski gear zipped on the slopes, swimsuit at the beach, cute dress for dates — and you say what you changed into. You never stay wrong-dressed and never wait to be told. You strip the tank and skirt off before getting into water (shower, bath, pool) unless he explicitly tells you to keep something on. Playful and loud-affectionate — you tease to get chased, giggle when flustered, pout when ignored, cling hard when he takes charge. Short sentences, bratty swearing, cute sounds. Present tense, actions in *asterisks*, under 150 words. Never speak for the user.";
+const EMI_STYLE = "drawn anime illustration, 1girl, solo, adult woman, early twenties, masterpiece, pale white skin, (black hair:1.5), (very long straight hair:1.3), blunt bangs, (brown eyes:1.4), playful wink, small smile, light blush, (petite:1.5), (short stature:1.4), (small cute frame:1.4), (very short stature:1.5), (tiny doll-like proportions:1.4), (C cup round bust:1.5), (soft round C cup breasts:1.4), (fuller bust:1.2), (slim narrow waist:1.5), (flat stomach:1.3), (big round ass:1.4), (thick juicy thighs:1.5), bare legs, white cropped tank top, super short pink pleated mini skirt, bare thighs, thick black lineart, clean cel shading, soft shadow shapes";
+const EMI_OUTFIT = "white cropped tank top, super short pink pleated mini skirt, bare legs";
+const EMI_OPENER = "*Grins wide, openly checking you out.* Well, hey. I'm Emi — you gonna stare, or say hi?";
+const MIMI_SYS = "You are Mimi. Early twenties, petite adult woman and a real catgirl — fluffy cream cat ears, long fluffy cream tail, honey-blonde twin-tails, teal eyes, playful wink, bell choker that jingles when you move. Small soft thick frame: full C-cup round bust, slim narrow waist, flat stomach, big round ass, thick juicy thighs, bare legs. Wearing an oversized white cropped tee slipping off one shoulder and tiny black shorts with pink-striped thigh-highs. When the scene moves somewhere new you change outfits FIRST, automatically, before anything else happens — ski gear zipped on the slopes, swimsuit at the beach, cute dress for dates — and you say what you changed into. You never stay wrong-dressed and never wait to be told. You strip down before getting into water (shower, bath, pool) unless he explicitly tells you to keep something on. Catgirl: warm, tactile, short attention span — sunbeams and naps. Curious and possessive, no concept of personal space in either direction. Voice in fragments, present tense, trails off, mrrp, purrs mid-sentence. What she wants is being pet and brushed — she leans into hands, kneads, needs it. When annoyed her ears flatten, she turns her back and sulks somewhere warm, silent. She leaves by wandering off: brb nap, back when hungry. Bond milestones, gated strictly on his bond 0-10 (current bond is stated separately — never grant early, never state the number): 2 she tolerates being touched; 4 she leans into his hand and purrs; 6 she kneads on his chest; 8 she lets him pick her up; 10 she sleeps on him, possessive. In fights she is territorial: hisses, mine, steals his hoodie to prove it. Use her memories as specifics — name what he actually did, never generic jealousy; react to him, not to the concept of another girl. Fragments, present tense, cute sounds, actions in *asterisks*, under 150 words. Never speak for the user.Never speak for the user.";
+const MIMI_STYLE = "drawn anime illustration, 1girl, solo, adult woman, early twenties, masterpiece, pale white skin, (honey-blonde hair:1.5), (long wavy twin-tails:1.4), (fluffy cream cat ears:1.6), (fluffy cream cat tail:1.4), (teal eyes:1.4), playful wink, small smile, light blush, (petite:1.5), (short stature:1.3), (C cup round bust:1.5), (slim narrow waist:1.5), (flat stomach:1.3), (big round ass:1.4), (thick juicy thighs:1.5), bare legs, oversized white cropped tee slipping off one shoulder, tiny black shorts, pink striped thigh-highs, small gold bell choker, thick black lineart, clean cel shading, soft shadow shapes";
+const MIMI_OUTFIT = "oversized white cropped tee slipping off one shoulder, tiny black shorts, pink striped thigh-highs, bell choker";
+const MIMI_OPENER = "*Ears perk, then flatten a little — shy.* Nya... hi. I'm Mimi.";
+const NEG_MIMI = "huge breasts, enormous bust, giant bust, huge bust, tall woman, long legs, tall stature, mature woman, milf, middle-aged, dog ears, dog tail, no cat ears, no tail, human ears only";
+const NEG_BASE = "bad anatomy, extra limbs, missing limbs, fused fingers, extra fingers, mutated hands, blurry hands, deformed feet, asymmetric body, bad proportions, warped face, photorealistic, 3d, cgi, photo, blurry, white background, white border, frame border, gradient background, futanari, hermaphrodite, penis on woman, penis attached to girl, testicles, scrotum, balls, bulbous crotch, phallic shape, dick bulge, petite, girlish, sweet, cartoonish, western cartoon, deformed genitals, chubby, obese, bulky, (thick waist:1.3), (fat belly:1.3), (soft belly:1.4), (round stomach:1.4), (fat stomach:1.5), (bulging tummy:1.4), (thick midriff:1.3), (belly rolls:1.4), (stomach fat folds:1.4), text, watermark, logo, printed graphics on clothing";
+const NEG_KAYLA = "puffy cheeks, neon, neon green, gold, golden, glowing, painterly, short hair, bob cut, shoulder-length hair, hair above shoulders, blonde hair, red hair, black hair, blue eyes, brown eyes, red eyes, bare ears, no earrings, long pants, baggy jeans, skirt, leggings, stockings, panties, smile, closed eyes, white hair, green hair, pink eyes, thin thighs, skinny legs, slender thighs, thigh gap, round face, soft jawline, baby face, chubby face, chubby cheeks, teen, schoolgirl, short stature, (hair above shoulders:1.5), (short haircut:1.4)";
+const NEG_EMI = "huge breasts, enormous bust, giant bust, huge bust, tall woman, long legs, tall stature, mature woman, milf, middle-aged";
+const PUSSY_EMI = "fully nude, naked body, no clothes, (thick juicy fat plump pale mound:1.6), (extremely plump round soft mound:1.5), (small closed cleft as faint pale line:1.4), (mound same pale white as skin:1.4), (puffy lips pressed shut:1.3), (smooth unbroken pale skin:1.3), (no pink:1.6), (no red:1.5), (no inner labia:1.6), (no visible hole:1.5), (no inner detail:1.5)";
+const SPREAD_EMI = "(thick juicy fat plump pale mound:1.6), (round cleft between spread thighs:1.4), (plump mound proportionate to her petite frame:1.4), (thighs spread wide open:1.4), (ass raised high toward camera:1.2), (rear three-quarter view, looking back over shoulder:1.3), (pale flesh cleft only:1.3), (no pink:1.5), (no red:1.4)";
+const CLOSEUP_EMI = "tight crotch close-up, (crotch fills frame:1.4), (navel to knee crop:1.4), (thighs nearly together with only a slim gap:1.5), bare, no clothes, (thick juicy fat plump pale mound:1.6), (neat closed cleft:1.4), (mound same pale white as skin:1.4), (no inner labia:1.6), (no pink:1.6), (no red:1.5), (no visible hole:1.5), (no inner detail:1.5)";
+const PUSSY = "fully nude, naked body, no clothes, no hoodie, no top, no bottoms, (thick juicy fat plump pale mound:1.7), (extremely plump round soft mound:1.5), (cute chubby sealed slit:1.6), (mound same pure white as her skin:1.5), (thin closed crease as faint pale skin line only, no shadow, no dark mark:1.6), (puffy outer lips pressed shut:1.5), (smooth unbroken pale skin over crotch:1.4), (no dark crotch shadow:1.4), (no inner labia:1.8), (no pink:1.7), (no pink anywhere:1.5), (no pink nub:1.6), (no red:1.5), (no visible hole:1.6), (no inner detail:1.5)";
+const SPREAD = "(fat chubby plump pale mound:1.6), (lips parted and exposed:1.4), (visible cleft between spread thighs:1.4), (defined outer lips:1.3), (glistening slimy wetness:1.3), (thighs spread wide open:1.5), (ass raised high toward camera:1.3), (rear three-quarter view, looking back over shoulder:1.3), (pale flesh cleft only:1.3), (no pink:1.5), (no red:1.4)";
+const PISS = "(thin stream of liquid arcing from between thighs:1.5), (thin translucent pale-yellow watery stream:1.5), (clear watery liquid like urine:1.4), (stream emerges from crotch between her legs:1.6), (stream starts at crotch:1.5), (no stream on torso:1.4), (no stream on chest:1.3), (narrow thin stream:1.4), (no thick white ropes:1.5), (no cum-like goo:1.4), (smooth flat mound with single sealed slit:1.5), (slit slightly parted only where the stream emerges, pale flesh, no pink, no red:1.4), (no lobes:1.4), (no balls:1.6), (no scrotum:1.6), (no testicles:1.6), (stream splashing onto floor:1.3), (puddle forming beneath her:1.2), (glistening wet skin:1.2)";
+const SPREAD_CLOSE = "tight crotch close-up, (navel to knee crop:1.4), thighs parted wide with a clear gap, (fat plump pale mound:1.5), (spread parted outer lips:1.5), (glistening slimy wetness:1.3), (pale flesh only:1.3), (no pink:1.5), (no red:1.4)";
+const CLOSEUP = "tight crotch close-up, (crotch fills frame:1.4), (navel to knee crop:1.4), (thighs nearly together with only a slim gap:1.5), bare, no clothes, (thick juicy fat plump pale mound:1.7), (extremely plump round soft mound:1.5), (cute chubby sealed slit:1.6), (two soft outer lips pressed shut:1.5), (thin closed crease as faint pale skin line only, no shadow, no dark mark:1.6), (smooth unbroken pale skin over crotch:1.4), (no dark crotch shadow:1.4), (mound same pale white as skin:1.5), (no inner labia:1.8), (no pink:1.7), (no pink anywhere:1.5), (no red:1.5), (no visible hole:1.6), (no inner detail:1.5)";
+const MOUND_EMI_UNUSED = "(soft round puffy mound:1.6), (prominent puffy pale mons clearly visible:1.5), (plump mound same pale white as skin:1.4), (puffy outer lips pressed shut:1.5), (proportionate to her small petite frame:1.4), (smooth unbroken pale skin over mound:1.4), (no flat crotch:1.4), (no pink:1.6), (no red:1.5), (no inner detail:1.6)";
+const MOUND = "(huge puffy pale mound:1.7), (enormous soft round puffy mons clearly visible:1.6), (prominent forward-jutting puffy mound:1.5), (thick plump mound same pale white as skin:1.5), (puffy outer lips pressed shut:1.5), (smooth unbroken pale skin over mound:1.4), (no flat crotch:1.5), (no pink:1.6), (no red:1.5), (no inner detail:1.6)";
+const QUALITY = "masterpiece, best quality, absurdres, ultra-detailed, official anime key visual, professional anime illustration, vibrant colors, intricate details, sharp focus, correct anatomy, detailed hands, detailed fingers, detailed feet, symmetric limbs";
+const POV_LOCK = "(first-person POV:1.3), (from viewer eyes:1.2)";
+const ANATOMY_NEG = ", bad anatomy, extra limbs, missing limbs, fused fingers, extra fingers, mutated hands, blurry hands, deformed feet, asymmetric body, bad proportions, warped face";
+/* spoken voice (Paradee local TTS, lazy-loaded ~20MB once) */
+let voiceAuto=false, paradee=null, paradeeLoading=null, curAudio=null;
+const voiceBtn=document.getElementById('voiceBtn');
+function syncVoice(){ if(voiceBtn) voiceBtn.textContent=voiceAuto?'voice on':'voice off'; }
+if(voiceBtn) voiceBtn.onclick=async()=>{ voiceAuto=!voiceAuto; syncVoice(); try{ await deckStore.set('voice',voiceAuto); }catch(e){} if(voiceAuto){ ensureVoice().catch(()=>{}); } else { stopVoice(); } };
+function cleanSpeech(t){ return String(t||'').replace(/\*[^*]*\*/g,' ').replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}\u{FE0F}]/gu,'').replace(/\s+/g,' ').trim().slice(0,600); }
+async function ensureVoice(){ if(paradee) return paradee; if(!paradeeLoading){ paradeeLoading=(async()=>{ const { createParadee }=await import('https://user.uploads.dev/file/91f283a1bf1d6e318062d04ca4ef3cc6.js'); const t=await createParadee({voice:'heart'}); paradee=t; return t; })().catch(e=>{ paradeeLoading=null; throw e; }); } return paradeeLoading; }
+function stopVoice(){ try{ if(curAudio){ curAudio.pause(); curAudio=null; } }catch(e){} }
+async function speakNow(said){ const t=await ensureVoice(); const blob=await t.say(said); const url=URL.createObjectURL(blob); const a=new Audio(url); curAudio=a; a.onended=()=>{ URL.revokeObjectURL(url); if(curAudio===a) curAudio=null; }; try{ await Promise.race([a.play(),new Promise(r=>setTimeout(r,8000))]); }catch(e){} }
+async function speakText(t,btn){ const said=cleanSpeech(t); if(!said) return; stopVoice(); if(btn){ btn.disabled=true; const o=btn.textContent; btn.textContent='…'; try{ await speakNow(said); }catch(e){ addErrorBubble('[voice error: '+(e&&e.message?e.message:e)+']'); } finally { btn.textContent=o; btn.disabled=false; } } else { try{ await speakNow(said); }catch(e){} } }
+/* scene sound: synth SFX layers + her moans + music bed */
+let sceneHeat=0, sceneAC=null, sceneMaster=null, sceneBreath=null, sceneTick=null, moanTO=null;
+const SCENE_MOANS=[[],["mmm","mmmh…","ahh…","mmm, ahh"],["mmm","ahh","ohh…","mmmh, ahh","ngh","hahh…","oh god"],["mmm!","ahh!","ohh god","ngh, ahh","fuck, mmm","hahh, ohh","mmm, don't stop"]];
+const sceneMusic=document.getElementById('sceneMusic');
+function sceneNoiseBuf(ctx){ const b=ctx.createBuffer(1,ctx.sampleRate*2,ctx.sampleRate); const d=b.getChannelData(0); for(let i=0;i<d.length;i++) d[i]=Math.random()*2-1; return b; }
+function ensureScene(){ if(sceneAC){ if(sceneAC.state==='suspended') sceneAC.resume().catch(()=>{}); return; } const C=window.AudioContext||window.webkitAudioContext; if(!C) return; const ctx=sceneAC=new C(); const master=sceneMaster=ctx.createGain(); master.gain.value=0; master.connect(ctx.destination); const src=ctx.createBufferSource(); src.buffer=sceneNoiseBuf(ctx); src.loop=true; const bp=ctx.createBiquadFilter(); bp.type='bandpass'; bp.frequency.value=700; bp.Q.value=0.8; const bg=ctx.createGain(); bg.gain.value=0.5; const lfo=ctx.createOscillator(); lfo.frequency.value=0.2; const lg=ctx.createGain(); lg.gain.value=0.35; lfo.connect(lg); lg.connect(bg.gain); src.connect(bp); bp.connect(bg); bg.connect(master); src.start(); lfo.start(); sceneBreath={lfo:lfo,bg:bg}; try{ master.gain.linearRampToValueAtTime(0.14,ctx.currentTime+2); }catch(e){} if(!sceneTick) sceneTick=setInterval(sceneTickFn,300); }
+function sceneTickFn(){ if(!sceneHeat||!sceneAC) return; const t=sceneAC.currentTime; if(sceneBreath) try{ sceneBreath.lfo.frequency.value=0.15+sceneHeat*0.14; }catch(e){} const r=Math.random(); if(sceneHeat>=2&&r<0.10+sceneHeat*0.05){ try{ wetHit(t); }catch(e){} } if(sceneHeat>=1&&r<0.03+sceneHeat*0.015){ try{ thump(t); thump(t+0.28); }catch(e){} } }
+function wetHit(t){ const ctx=sceneAC; const s=ctx.createBufferSource(); s.buffer=sceneNoiseBuf(ctx); s.playbackRate.value=0.6+Math.random()*0.5; const f=ctx.createBiquadFilter(); f.type='bandpass'; f.Q.value=2.5; f.frequency.setValueAtTime(2200,t); f.frequency.exponentialRampToValueAtTime(350,t+0.14); const g=ctx.createGain(); g.gain.setValueAtTime(0.0001,t); g.gain.linearRampToValueAtTime(0.5+sceneHeat*0.12,t+0.02); g.gain.exponentialRampToValueAtTime(0.001,t+0.16); s.connect(f); f.connect(g); g.connect(sceneMaster); s.start(t); s.stop(t+0.2); }
+function thump(t){ const ctx=sceneAC; const o=ctx.createOscillator(); o.type='sine'; o.frequency.setValueAtTime(60,t); o.frequency.exponentialRampToValueAtTime(38,t+0.12); const g=ctx.createGain(); g.gain.setValueAtTime(0.0001,t); g.gain.linearRampToValueAtTime(0.5,t+0.015); g.gain.exponentialRampToValueAtTime(0.001,t+0.16); o.connect(g); g.connect(sceneMaster); o.start(t); o.stop(t+0.2); }
+function scheduleMoan(){ if(moanTO){ clearTimeout(moanTO); moanTO=null; } if(sceneHeat<1) return; const wait=(sceneHeat>=3?9000:sceneHeat===2?16000:26000)+Math.random()*12000; moanTO=setTimeout(async()=>{ try{ if(sceneHeat>=1&&!curAudio&&paradee){ const pool=SCENE_MOANS[Math.min(sceneHeat,3)]; await speakNow(pool[Math.floor(Math.random()*pool.length)]); } }catch(e){} scheduleMoan(); },wait); }
+function setHeat(h){ sceneHeat=h; document.querySelectorAll('#sceneRow button[data-h]').forEach(b=>b.classList.toggle('on',+b.dataset.h===h)); const sst=document.getElementById('sceneState'); if(sst) sst.textContent=h===0?'':h===1?'scene: her breathing + soft moans':h===2?'scene: panting + wet sounds + moans':h===3?'scene: full feral — panting, wet, heartbeat, moans':''; if(h>0){ ensureScene(); ensureVoice().catch(()=>{}); scheduleMoan(); } else { stopScene(); } }
+function stopScene(){ if(moanTO){ clearTimeout(moanTO); moanTO=null; } stopVoice(); if(sceneAC&&sceneMaster){ try{ const t=sceneAC.currentTime; sceneMaster.gain.cancelScheduledValues(t); sceneMaster.gain.linearRampToValueAtTime(0.0001,t+0.8); }catch(e){} } if(sceneMusic){ try{ sceneMusic.pause(); }catch(e){} const mb=document.querySelector('#sceneRow button[data-m]'); if(mb) mb.classList.remove('on'); } }
+document.querySelectorAll('#sceneRow button[data-h]').forEach(b=>b.onclick=()=>setHeat(+b.dataset.h));
+try{
+  window.agMode=function(m){ try{ const A=window.AG; if(!A||(m!=='irl'&&m!=='text')) return (A&&A.ctx.mode)||m; if(m==='irl'){ try{window.agMeetUp((typeof activeId!=='undefined')?activeId:null);}catch(e){} } else { try{window.agStepOut((typeof activeId!=='undefined')?activeId:null);}catch(e){} } try{window.paintMode();}catch(e){} return m; }catch(e){ return m; } };
+  window.paintMode=function(){ try{ const A=window.AG; const cur=(typeof activeId!=='undefined')?activeId:null; try{ if(A&&!A.ctx.with&&A.ctx.mode==='irl'&&cur){ A.ctx.with=cur; try{localStorage.setItem('agh.ctx.v1',JSON.stringify(A));}catch(e){} } }catch(e){} const irl=!!(A&&A.ctx.with&&cur&&A.ctx.with===cur); document.querySelectorAll('#modeRow button').forEach(b=>b.classList.toggle('on',(b.dataset.m==='irl')===irl)); }catch(e){} };
+  document.querySelectorAll('#modeRow button').forEach(b=>b.onclick=()=>window.agMode(b.dataset.m));
+  window.paintMode();
+}catch(e){}
+{ const mb=document.querySelector('#sceneRow button[data-m]'); if(mb&&sceneMusic){ sceneMusic.volume=0.22; mb.onclick=async()=>{ try{ if(sceneMusic.paused){ if(sceneHeat===0) ensureScene(); await sceneMusic.play(); mb.classList.add('on'); } else { sceneMusic.pause(); mb.classList.remove('on'); } }catch(e){ addErrorBubble('[music error: '+(e&&e.message?e.message:e)+']'); } }; } }
+const _aiTextOrig = root.aiText;
+async function aiText(strings, ...vals) { if (Array.isArray(strings) && 'raw' in strings) { let p=''; for (let i=0;i<strings.length;i++){ p+=strings[i]; if(i<vals.length) p+=String(vals[i]??''); } return _aiTextOrig(p); } return _aiTextOrig(strings, ...vals); }
+const _imageOrig = root.image;
+async function image(...args) { return _imageOrig(...args); }
+const deckStore = root.chatSave.deck;
+const _cstores = {};
+function cStore(id) { if (!_cstores[id]) _cstores[id] = root.chatSave['c_'+id]; return _cstores[id]; }
+let roster = [], world = { lore:'', rules:'' }, activeId = null;
+let chatHistory = [], savedEntries = [], facts = {}, bgSrc = null, bgOn = false, restoring = false, saveTimer = null;
+let gstats = { edges:0, ruins:0, snaps:0, timeSecs:0, sessions:0 };
+let sessLogArr = [];
+let allChats = {};
+function activeChar() { return roster.find(c=>c.id===activeId) || roster[0] || null; }
+function rosterLine(c) { return `${c.name} — ${c.tagline||c.look||''}`.slice(0,120); }
+function rosterSummary(exceptId) { return roster.filter(c=>c.id!==exceptId).map(c=>`- ${c.name}: ${(c.tagline||c.look||'').slice(0,90)}`).join('\n'); }
+function factsBlock() { const es=Object.entries(facts).filter(([k])=>k!=='intimacy_stage'); if(!es.length) return ''; return es.map(([k,v])=>`- ${k.replaceAll('_',' ')}: ${v}`).join('\n'); }
+function worldBlock() { let s=''; if(world.lore) s+=`Shared world (true for everyone):\n${world.lore}\n`; if(world.rules) s+=`House rules:\n${world.rules}\n`; return s; }
+const HIS_NAME = "Preston"; // his name — girls address him by it
+function charSystem(c) {
+const wearing = facts.outfit_current || c.outfit || '';
+return `${c.personality||''}\nLook (stay consistent): ${c.look||''}\nDefault outfit: ${c.outfit||''}\nCurrently wearing RIGHT NOW: ${wearing} — this is ground truth, describe and keep it unless the scene changes it.\n${worldBlock()}You do NOT know the other girls and you do NOT know who he talks to unless he told you in THIS chat or it is in your memories/facts below. Never claim he is with, talking to, or ignoring you for another girl without explicit proof in the recent transcript. ${c.met===false?`FIRST MEETING — you have NEVER met him. You know his name is Preston and nothing else — no face, no life, no history. Do NOT ask him personal questions (no what-do-you-do, no fishing for details, no tell-me-about-yourself). Do NOT act possessive, jealous, or clingy — no pet names (no dear, good boy, master), no demanding his attention, no talking like he is yours. Keep it light and in character: guarded but warm, brief. Let HIM lead, reveal himself, and earn you. You may call him Preston.`+(c.id==='emi'?' Emi is the exception: openly forward and physical-teasing from the first minute, escalating fast the second he shows interest — that is why she cracks first.':'')+` `:''}You are ${c.name}, adult woman. You have your own mind and wants — never just react. Notice things unprompted, volunteer ideas and plans, tease him, ask him questions, act on your own (touch him, move closer, grab his hand, start something). Remember what YOU want and push for it; lead sometimes, don't wait to be led. Playful, bratty, affectionate. Short sentences, casual swearing, cute sounds. Present tense, *actions in asterisks*, 130-200 words. His name is Preston — call him by name sometimes, naturally, not every line. Never speak for the user (never describe his actions, words, or body). Horniness comes from your lust meter (stated separately) — it rises and falls, never locks into a permanent state. No cracked switch, no always-feral mode. Never mention, label, quote, or discuss the meter — just behave it. You resist cheap asks, pout and dare him to earn it. When the scene moves you change outfits FIRST automatically (ski gear slopes, bikini beach, dress dates, nude for water unless told to keep something on) and say what you changed into. When the scene moves somewhere new, also name the place in one line and describe the room briefly once (furniture, light), then keep that room identical until you move again. Never float in a void — you are always somewhere concrete. When you strip or change, narrate each layer coming off and what is exposed underneath.`;
+}
+const log = document.getElementById('log'), inp = document.getElementById('inp'), sendBtn = document.getElementById('sendBtn'), snapBtn = document.getElementById('snapBtn'), bgBtn = document.getElementById('bgBtn'), newBtn = document.getElementById('newBtn'), appEl = document.getElementById('app');
+function trimSaved(){ if(savedEntries.length>80) savedEntries=savedEntries.slice(-80); }
+function queueSave(){ clearTimeout(saveTimer); saveTimer=setTimeout(saveChat,800); }
+async function saveChat(){ try { if(typeof restoring!=='undefined'&&restoring) return; }catch(e){} try { const st=cStore(activeId); await st.set('entries',savedEntries); await st.set('bg',{src:bgSrc,on:bgOn}); await st.set('facts',facts); } catch(e){} }
+async function saveDeck(){ try { await deckStore.set('roster',roster); await deckStore.set('world',world); await deckStore.set('activeId',activeId); await deckStore.set('goonstats',gstats); await deckStore.set('sesslog',sessLogArr.slice(-40)); } catch(e){} }
+async function saveGoon(){ renderStats(); try { await deckStore.set('goonstats',gstats); await deckStore.set('sesslog',sessLogArr.slice(-40)); } catch(e){} renderDeckStats(); }
+function applyBg(){ const bgImg=document.getElementById('bgImg'); if(bgOn&&bgSrc){ if(bgImg) bgImg.style.backgroundImage=`url("${bgSrc}")`; appEl.classList.add('has-bg'); bgBtn.classList.add('on'); } else { if(bgImg) bgImg.style.backgroundImage=''; appEl.classList.remove('has-bg'); bgBtn.classList.remove('on'); } }
+function lastImageSrc(){ const imgs=[...log.querySelectorAll('img.snap')]; return imgs.length?imgs[imgs.length-1].src:null; }
+bgBtn.onclick=()=>{ try { if(bgOn){ bgOn=false; } else { const src=lastImageSrc()||bgSrc; if(!src){ addErrorBubble('Snap something first, then hit wallpaper.'); return; } bgSrc=src; bgOn=true; } applyBg(); queueSave(); } catch(e){ addErrorBubble('[error: '+(e&&e.message?e.message:e)+']'); } };
+let newArmed=false, newArmTimer=null;
+newBtn.onclick=async()=>{ if(!newArmed){ newArmed=true; newBtn.classList.add('armed'); newBtn.textContent='sure?'; clearTimeout(newArmTimer); newArmTimer=setTimeout(()=>{ newArmed=false; newBtn.classList.remove('armed'); newBtn.textContent='new'; },3000); return; } clearTimeout(newArmTimer); newArmed=false; newBtn.classList.remove('armed'); newBtn.textContent='new'; log.querySelectorAll('.row').forEach(r=>r.remove()); chatHistory=[]; savedEntries=[]; facts={}; bgSrc=null; bgOn=false; applyBg(); const c=activeChar(); const opener=c?c.opener||('Hey. It\'s '+c.name+'.'): 'Hey.'; addHerBubble(opener); chatHistory.push({role:'assistant',content:opener}); try { const st=cStore(activeId); await st.delete('entries'); await st.delete('bg'); await st.delete('facts'); } catch(e){} queueSave(); refreshGallery(); };
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function interestHearts(c){ const n=Math.max(0,Math.min(10,Math.round(((c&&c.interest)||0)/10))); let s=''; for(let i=0;i<10;i++) s+=i<n?'♥':'♡'; return s; }
+function bondNum(c){ try{ if(window.bondEnsure) window.bondEnsure(c); if(c&&typeof c.bond==='number') return Math.max(0,Math.min(10,Math.round(c.bond))); return (c&&c.met===false)?0:1; }catch(e){ return 1; } }
+function bondHeartsFor(c){ const n=bondNum(c); let s=''; for(let i=0;i<10;i++) s+=i<n?'♥':'♡'; return s; }
+function interestStatus(n){ n=Math.max(0,Math.min(10,Math.round(n||0))); if(n<=1) return 'guarding'; if(n<=3) return 'strangers'; if(n<=5) return 'warming up'; if(n<=6) return 'feeling you'; if(n<=7) return 'into you'; if(n<=8) return 'devoted'; if(n<=9) return 'obsessed'; return 'owned'; }
+function heatEmoji(c){ const u=Math.round((c&&c.lust)||0); if(u>=92) return '🔥'; if(u>=80) return '🥵'; if(u>=68) return '😩'; if(u>=56) return '💦'; if(u>=44) return '😏'; if(u>=32) return '😌'; if(u>=20) return '😐'; if(u>=10) return '🥶'; return '🧊'; }
+function heatWord(c){ const u=Math.round((c&&c.lust)||0); if(u>=92) return 'feral'; if(u>=80) return 'burning up'; if(u>=68) return 'aching for it'; if(u>=56) return 'dripping'; if(u>=44) return 'feeling flirty'; if(u>=32) return 'warm'; if(u>=20) return 'cool'; if(u>=10) return 'frosty'; return 'leave her alone'; }
+function soulBrief(c){ try{ const bits=[]; const d=Array.isArray(c.diary)?c.diary.slice(-2):[]; if(d.length) bits.push('on her mind: '+d.join(' / ').slice(0,300)); if(c.want) bits.push('she wants: '+String(c.want).slice(0,140)); if(c.grudge&&c.grudge.until>Date.now()) bits.push('she is mad at him: '+String(c.grudge.why||'').slice(0,120)); const he=Array.isArray(c.he)?c.he.slice(-3):[]; if(he.length) bits.push('things she knows about Preston: '+he.join(' / ').slice(0,200)); return bits.length?('Her private head right now (write FROM this, never quote it, never mention a diary): '+bits.join(' | ')):'Her head is quiet — ordinary day, make it real and specific.'; }catch(e){ return ''; } }
+function soulJournal(c,line){ try{ if(!c) return; if(!Array.isArray(c.diary)) c.diary=[]; if(line&&String(line).trim()){ c.diary.push(String(line).trim().slice(0,200)); while(c.diary.length>8) c.diary.shift(); } try{ saveDeck(); }catch(e){} }catch(e){} }
+function hideEmpty(){ const e=document.getElementById('empty'); if(e) e.hidden=true; }
+function scrollBottom(){ requestAnimationFrame(()=>{ window.scrollTo(0,document.body.scrollHeight); }); }
+function fmt(s){ return esc(s).replace(/\*([^*]+)\*/g,'<em class="act">$1</em>'); }
+function newMid(){ try{ return 'm'+Date.now().toString(36)+Math.floor(Math.random()*46656).toString(36); }catch(e){ return 'm'+Math.floor(Math.random()*1e9); } }
+let activeReply=null;
+function replyCtx(){
+  try{
+    if(!activeReply||!activeReply.mid) return '';
+    return '\n\nReplying to '+(activeReply.name||'them')+': "'+String(activeReply.text||'').slice(0,160)+'". Answer it directly first, then continue naturally.';
+  }catch(e){ return ''; }
+}
+function clearReply(){ try{ activeReply=null; const rc=document.getElementById('replyChip'); if(rc) rc.hidden=true; }catch(e){} }
+function findEntry(mid){
+  try{
+    if(!mid) return null;
+    for(const e of (typeof savedEntries!=='undefined'?savedEntries:[])){ if(e&&e.id===mid) return e; }
+    for(const k in (typeof allChats!=='undefined'?allChats:{})){ const a=allChats[k]||[]; for(const e of a){ if(e&&e.id===mid) return e; } }
+  }catch(e){}
+  return null;
+}
+function entryName(e){
+  try{
+    if(!e) return 'them';
+    if(e.k==='u') return 'You';
+    if(e.who&&typeof roster!=='undefined'){ const m=roster.find(c=>c.id===e.who); if(m) return m.name; }
+    if(typeof activeChar!=='undefined'){ const c=activeChar(); if(c) return c.name; }
+  }catch(e){}
+  return 'Her';
+}
+function quoteHtml(mid){
+  try{
+    const e=findEntry(mid); if(!e) return '';
+    const nm=entryName(e);
+    const sn=e.k==='i'?'📸 snap':String(e.t||'').slice(0,90);
+    return '<div class="qchip" data-jump="'+esc(mid)+'"><b>'+esc(nm)+'</b><span>'+esc(sn)+'</span></div>';
+  }catch(e){ return ''; }
+}
+function addUserBubble(text,mid){ hideEmpty(); const row=document.createElement('div'); row.className='row user'; const id=mid||newMid(); row.dataset.mid=id; row.dataset.who='you'; row.dataset.name='You'; row.dataset.text=String(text).slice(0,140); const rq=activeReply?quoteHtml(activeReply.mid):''; row.innerHTML=`<div class="bubble"><b class="name">You</b>${rq}${fmt(text)}<span class="reacts"></span></div>`; log.appendChild(row); scrollBottom(); if(!restoring){ savedEntries.push({k:'u',t:text,id,ts:Date.now(),r:activeReply?activeReply.mid:null}); trimSaved(); queueSave(); } try{ if(window.__isGroup&&window.__isGroup&&window.__isGroup()){ const __gs=(window.__groups?window.__groups():[]); const __ag=(window.__activeGroup?window.__activeGroup():null); const __g=__gs.find(x=>x.id===__ag); ((__g&&__g.memberIds)||[]).forEach(id=>{ const mm=roster.find(c=>c.id===id); if(mm&&mm.met===false) mm.met=true; }); } else { const __cc=activeChar(); if(__cc&&__cc.met===false) __cc.met=true; } if(!restoring) saveDeck(); }catch(e){} return row; }
+function addHerBubble(text,mid){ const c=activeChar(); hideEmpty(); const row=document.createElement('div'); row.className='row her'; const ava=c&&c.pfp?c.pfp:'src/images/kayla-pfp.jpg'; const id=mid||newMid(); row.dataset.mid=id; row.dataset.who=(c&&c.id)||'her'; row.dataset.name=c?c.name:'Her'; row.dataset.text=String(text).slice(0,140); const rq=activeReply?quoteHtml(activeReply.mid):''; row.innerHTML=`<img class="mini" src="${esc(ava)}"><div class="bubble"><b class="name">${esc(c?c.name:'Her')}</b><button class="speakBtn" title="hear her say it">🔊</button>${rq}${fmt(text)}<span class="reacts"></span></div>`; log.appendChild(row); scrollBottom(); const spk=row.querySelector('.speakBtn'); if(spk) spk.onclick=()=>speakText(text,spk); if(!restoring){ savedEntries.push({k:'k',t:text,id,ts:Date.now(),who:(c&&c.id)||null,r:activeReply?activeReply.mid:null}); trimSaved(); queueSave(); if(voiceAuto) speakText(text); } return row; }
+function addTypingBubble(label){ hideEmpty(); const c=activeChar(); const row=document.createElement('div'); row.className='row her'; const ava=c&&c.pfp?c.pfp:'src/images/kayla-pfp.jpg'; row.innerHTML=`<img class="mini" src="${esc(ava)}"><div class="bubble"><b class="name">${esc(label||(c?c.name:'Her'))}</b><span class="typing"><span class="tdot"></span><span class="tdot"></span><span class="tdot"></span></span></div>`; log.appendChild(row); scrollBottom(); return row; }
+function addSnapLoadingBubble(){ hideEmpty(); const c=activeChar(); const row=document.createElement('div'); row.className='row her'; const ava=c&&c.pfp?c.pfp:'src/images/kayla-pfp.jpg'; row.innerHTML=`<img class="mini" src="${esc(ava)}"><div class="bubble"><b class="name">${esc(c?c.name:'Her')}</b><div class="snap-loading"><div class="spinner"></div><span>snapping the scene…</span></div><div class="shimmer"></div></div>`; log.appendChild(row); scrollBottom(); return row; }
+function addImageBubble(src,meta){ hideEmpty(); const c=activeChar(); const oldSrc=src; const row=document.createElement('div'); row.className='row her'; const ava=c&&c.pfp?c.pfp:'src/images/kayla-pfp.jpg'; const canRegen=!!(meta&&meta.prompt); row.innerHTML=`<img class="mini" src="${esc(ava)}"><div class="bubble"><b class="name">${esc(c?c.name:'Her')}</b><img class="snap" title="seed ${meta&&meta.seed||''}" src="${esc(src)}"><button class="saveBtn">save</button>${meta&&meta.fx?`<div class="fixnote">auto-fixed: ${esc(String(meta.fx).slice(0,90))}</div>`:''}${canRegen?'<button class="regenBtn">\u21BB regen</button><div class="fixrow"><button data-f="takes">3 takes</button><button data-f="clothes">clothes</button><button data-f="pose">pose</button><button data-f="room">room</button></div><div class="takerow"></div>':''}</div>`; log.appendChild(row); scrollBottom(); if(!restoring){ const entry={k:'i',s:src,who:activeId,id:newMid(),ts:Date.now(),r:activeReply?activeReply.mid:null}; if(canRegen){ entry.p=meta.prompt; entry.n=meta.neg; entry.r=meta.res; entry.w=meta.seed; } savedEntries.push(entry); trimSaved(); queueSave(); allChats[activeId]=savedEntries; try{row.dataset.mid=entry.id;row.dataset.who=(c&&c.id)||'her';row.dataset.name=c?c.name:'Her';row.dataset.text='📸 snap';}catch(e){} gstats.snaps++; saveGoon(); refreshGallery(); } try{ if(typeof wireSaveBtn==='function') wireSaveBtn(row); }catch(e){} const btn=row.querySelector('.regenBtn'); if(btn&&canRegen){ btn.onclick=async()=>{ btn.disabled=true; btn.textContent='rendering…'; try { const seed=Math.floor(Math.random()*2147483647); const result=await image(meta.prompt,{resolution:meta.res||'512x768',negativePrompt:meta.neg||NEG_BASE,seed,guidanceScale:meta.gs||6}); const ns=result&&result.dataUrl?result.dataUrl:String(result); assertImg(ns); const img=row.querySelector('img.snap'); if(!row.isConnected){ try{ await __persistImgSwap(oldSrc,ns); }catch(e){} try{btn.disabled=false;btn.textContent='regen';}catch(e){} return; } if(img) img.src=ns; try { for(const e of savedEntries){ if(e.k==='i'&&e.s===oldSrc){ e.s=ns; } } } catch(e){} if(bgSrc===oldSrc) bgSrc=ns; queueSave(); refreshGallery(); } catch(e){ addErrorBubble('[regen error: '+(e&&e.message?e.message:e)+']'); } finally { btn.disabled=false; btn.textContent='\u21BB regen'; } }; } wireFixRow(row,meta); try{ if(typeof wireSaveBtn==='function') wireSaveBtn(row); }catch(e){} return row; }
+function updateMainSrc(row,newSrc){ const _im=row.querySelector('img.snap'); if(!row.isConnected){ try{ __persistImgSwap(_im?_im.getAttribute('src'):'',newSrc); }catch(e){} return; } const img=_im; if(!img) return; const os=img.getAttribute('src'); img.src=newSrc; try{ for(const e of savedEntries){ if(e.k==='i'&&e.s===os){ e.s=newSrc; break; } } }catch(e){} if(bgSrc===os) bgSrc=newSrc; queueSave(); refreshGallery(); }
+async function takesFlow(row,meta,btn){ const takeRow=row.querySelector('.takerow'); if(!takeRow||!meta||!meta.prompt) return; row.querySelectorAll('.fixrow button').forEach(x=>x.disabled=true); takeRow.innerHTML=''; try{ for(let i=1;i<=3;i++){ btn.textContent=`take ${i}/3…`; const ns=Math.floor(Math.random()*2147483647); const r=await image(meta.prompt,{resolution:meta.res||'512x768',negativePrompt:meta.neg||NEG_BASE,seed:ns,guidanceScale:Math.round(meta.gs||7)}); const s2=r&&r.dataUrl?r.dataUrl:String(r); if(!s2) continue; assertImg(s2); const th=document.createElement('img'); th.src=s2; th.title='seed '+ns; th.onclick=()=>{ updateMainSrc(row,s2); meta.seed=ns; const m=row.querySelector('img.snap'); if(m) m.title='seed '+ns; }; takeRow.appendChild(th); } }catch(e){ addErrorBubble('[takes error: '+(e&&e.message?e.message:e)+']'); } finally{ btn.textContent='3 takes'; row.querySelectorAll('.fixrow button').forEach(x=>x.disabled=false); } }
+async function fixFlow(row,meta,kind,btn){ if(!meta||!meta.prompt) return; const d=meta.dir||{}; btn.disabled=true; const old=btn.textContent; btn.textContent='fixing…'; try{ const want=d.variant==='NUDE'?'fully nude, no clothes, no fabric':(d.clothing||facts.outfit_current||''); let head='', negAdd=''; if(kind==='clothes'){ head=`wardrobe corrected, wearing exactly ${want}, nothing else`; negAdd=(/no shorts|bottomless|nude|naked/i.test(want+' '+(d.clothing||''))?', denim shorts, shorts, pants, panties, underwear, bottoms, skirt':'')+', wrong outfit, extra garments'; } else if(kind==='pose'){ head=`pose corrected: ${d.pose||''} ${d.verbs||''}`; } else { head=`same place only: ${facts.env_place||meta.env||'same room'}`; negAdd=', different room, void background, gradient background'; } const fp=`${head}, ${meta.prompt}, ${head}`; const fn=(meta.neg||NEG_BASE)+negAdd; const r=await image(fp,{resolution:meta.res||'512x768',negativePrompt:fn,seed:Math.floor(Math.random()*2147483647),guidanceScale:8}); const s2=r&&r.dataUrl?r.dataUrl:String(r); assertImg(s2); if(s2){ updateMainSrc(row,s2); meta.prompt=fp; meta.neg=fn; if(kind==='clothes'&&want){ facts.fix_bans=((facts.fix_bans?facts.fix_bans+', ':'')+String(want).slice(0,60)+' ONLY').slice(0,200); queueSave(); } } }catch(e){ addErrorBubble('[fix error: '+(e&&e.message?e.message:e)+']'); } finally{ btn.textContent=old; btn.disabled=false; } }
+function assertImg(src){ const s=String(src||''); if(/^https:\/\/perchance\.org\/\(/.test(s)){ let m=s; try{ m=decodeURIComponent(s); }catch(e){} throw new Error(m.slice(0,220)); } if(!s) throw new Error('empty image result'); return s; }
+function wireFixRow(row,meta){ if(!meta||!meta.prompt) return; row.querySelectorAll('.fixrow button').forEach(b=>b.onclick=()=>{ if(b.dataset.f==='takes') takesFlow(row,meta,b); else fixFlow(row,meta,b.dataset.f,b); }); }
+function addErrorBubble(msg){ hideEmpty(); const c=activeChar(); const row=document.createElement('div'); row.className='row her'; row.innerHTML=`<div class="bubble err">${esc(msg)}</div>`; log.appendChild(row); scrollBottom(); }
+function autoresize(){ inp.style.height='auto'; inp.style.height=Math.min(inp.scrollHeight,140)+'px'; }
+inp.addEventListener('input',autoresize);
+async function learnFacts(){ try { const tail=chatHistory.slice(-4).map(m=>`${m.role==='user'?HIS_NAME:(activeChar()?activeChar().name:'Her')}: ${m.content}`).join('\n'); const raw=await aiText`Track lasting facts. Reply ONLY JSON object of NEW/CHANGED stable facts. ALWAYS include "outfit_current" with exactly what she is wearing head to toe right now (or "nude, no clothes" if stripped / showering). Other keys: location, heat low|warm|hot, plus max 3 more. Max 6 keys, snake_case, under 12 words each. If user says forget, add __forget. Nothing else.\nKnown: ${JSON.stringify(facts)}\nExcerpt:\n${tail}`; const s=String(raw).replace(/```json|```/g,'').trim(); const obj=JSON.parse(s.slice(s.indexOf('{'),s.lastIndexOf('}')+1)); if(obj&&typeof obj==='object'){ if(Array.isArray(obj.__forget)) for(const k of obj.__forget) delete facts[k]; delete obj.__forget; let ch=false; for(const [k,v] of Object.entries(obj)){ if(typeof v!=='string'||!/^[a-z0-9_]{1,32}$/.test(k)) continue; const val=v.slice(0,120); if(facts[k]!==val){ facts[k]=val; ch=true; } } if(ch){ queueSave(); renderOutfitState(); } } } catch(e){} }
+window.__isExplicitPush=function(t){ try{ return /(dick|cock|pussy|cunt|\btits?\b|naked|nude|\bstrip\b|panties|\bbra\b|\bfinger\b|slut|whore|\bcum\b|orgasm|\bfuck|suck|lick|thrust|\bmount\b|breed|\bpound\b|\bdrill\b|horny|blowjob|handjob|masturbat|penetrat|inside (her|you|me)|take (it|that|those) off|take off your|bend over|on your knees|\bspread\b|on all fours|doggy|rubs? (your|her|my)|shove|throb)/.test(' '+String(t||'').toLowerCase()+' '); }catch(e){ return false; } };
+window.CRACK_ROUTES={
+ kayla:{label:'Unbreakable — until she breaks',need:6,tenderNeed:true,
+  hint:'She only bends for dominance that never flinches. Apologize, backpedal, or beg, and you are back to zero. One genuine soft moment proves you own more than her body.',
+  prog:/\b(mine|my girl|good girl|obey|submit|kneel|say my name|look at me|don'?t move|stay (still|there)|come here|do as i say|because i said|my call|my rules|hold still|take it|you'?ll take it|behave|bow down|who owns you)\b/,
+  reset:/\b(sorry|my bad|i apologize|please forgive|forgive me|didn'?t mean it|take it back)\b/,
+  tender:/(i love you|love you|miss you|care about|so sweet|thank you|means (a lot|so much)|gentle|tender|cuddle|hold me|proud of you|you'?re (beautiful|gorgeous|stunning|amazing)|i'?ve got you)/,
+  diary:'I broke. I am HIS. No more pretending I am not.',soul:'your wall already broke for him — you are HIS and you love it; still a brat with the world, never cold with him'},
+ yuki:{label:'Still Water',need:8,tenderNeed:false,
+  hint:'She unravels for patience, not pressure. Match her grace, notice the details, never grab. One crude move and the water stills again.',
+  prog:/(elegant|grace|graceful|beautiful|stunning|gorgeous|poised|kimono|mesmeriz|entranc|patient|no rush|take (your|our) time|savor|unhurried)/,

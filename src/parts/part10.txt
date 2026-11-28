@@ -1,0 +1,500 @@
+}
+setInterval(()=>{ try{ sulkTick(); }catch(e){} },600000);
+try{
+  const _rdP3=renderDeck;
+  renderDeck=function(){
+    const r=_rdP3();
+    try{
+      const grp=(window.__isGroup&&window.__isGroup())?true:false;
+      const gid=grp?((window.__activeGroup?window.__activeGroup():null)):null;
+      document.querySelectorAll('#rosterGrid .bitch').forEach(card=>{
+        const cid=card.dataset.cid; if(!cid) return;
+        const c=(typeof roster!=='undefined')?roster.find(x=>x.id===cid):null; if(!c) return;
+        try{ card.style.setProperty('--chue',(c.hue!=null?c.hue:300)); }catch(e){}
+        let withHer=false;
+        try{ const irlId=(window.agWith?window.agWith():((typeof activeId!=='undefined')?activeId:null)); withHer=grp?false:(cid===irlId); if(grp){ const gs=window.__groups?window.__groups():[]; const g=gs.find(x=>x.id===gid); withHer=!!(g&&(g.memberIds||[]).includes(cid)); } }catch(e){}
+        card.classList.remove('active'); card.classList.toggle('with',!!withHer);
+        try{
+          const b=card.querySelector('.bmeta b'); if(!b) return;
+          let tag=b.querySelector('.withtag');
+          if(withHer&&!tag){ tag=document.createElement('span'); tag.className='withtag'; tag.textContent='irl'; b.appendChild(tag); }
+          else if(!withHer&&tag){ tag.remove(); }
+        }catch(e){}
+      });
+      try{
+        const gs=(window.__groups?window.__groups():[]);
+        const aid=(window.__activeGroup?window.__activeGroup():null);
+        document.querySelectorAll('#groupGrid .gcard').forEach((card,i)=>{
+          const g=gs[i]; const on=!!(g&&aid&&g.id===aid);
+          card.classList.toggle('with',on);
+          try{
+            const b=card.querySelector('.gmeta b'); if(!b) return;
+            let tag=b.querySelector('.withtag');
+            if(on&&!tag){ tag=document.createElement('span'); tag.className='withtag'; tag.textContent='with'; b.appendChild(tag); }
+            else if(!on&&tag){ tag.remove(); }
+          }catch(e){}
+        });
+      }catch(e){}
+    }catch(e){}
+    return r;
+  };
+}catch(e){}
+try{
+  const row=document.getElementById('groupSnapRow'); const cs=document.getElementById('composerStick');
+  if(row&&cs&&row.parentElement!==cs){ cs.insertBefore(row,cs.firstChild); }
+}catch(e){}
+try{
+  const lg=document.getElementById('log');
+  if(lg&&!window.__snapScrollArmed){ window.__snapScrollArmed=true; lg.addEventListener('load',function(e){ try{ if(e&&e.target&&e.target.classList&&e.target.classList.contains('snap')&&Date.now()-(window.__justOpened||0)<4000) scrollBottom(); }catch(_){} },true); }
+}catch(e){}
+window.aghPass3=true;
+</script>
+
+<script>
+/* ==== fourth pass: settings header, cross-chat guards, no-pull streaming ==== */
+function __ctxKey(){ try{ if(window.__isGroup&&window.__isGroup()) return 'g:'+((window.__activeGroup?window.__activeGroup():null)||''); }catch(e){} try{ return 'c:'+activeId; }catch(e){ return 'c:'; } }
+async function __stashSolo(girlId,entry){ try{ const st=cStore(girlId); let arr=[]; try{ arr=(await st.get('entries'))||[]; }catch(e){ try{ arr=allChats[girlId]||[]; }catch(_){} } arr.push(entry); const slim=arr.slice(-80); try{ await st.set('entries',slim); }catch(e){} try{ allChats[girlId]=slim; }catch(e){} try{ const un=(window.__unreadBox?window.__unreadBox():null); if(un) un[girlId]=(un[girlId]||0)+1; }catch(e){} try{ if(window.__saveUnread) window.__saveUnread(); }catch(e){} try{ renderDeck(); }catch(e){} try{ if(window.toast){ const m=roster.find(c=>c.id===girlId); window.toast((m?m.name:'Her')+' sent something while you were away — open her chat'); } }catch(e){} }catch(e){} }
+async function __stashGroupText(gid,whoId,text){ try{ const key='g_'+gid; const st=root.chatSave[key]; let arr=[]; try{ arr=(await st.get('entries'))||[]; }catch(e){ try{ arr=allChats[key]||[]; }catch(_){} } arr.push({k:'k',who:whoId,t:String(text).slice(0,600),id:(typeof newMid==='function'?newMid():'m'+Date.now()),ts:Date.now()}); const slim=arr.slice(-80); try{ await st.set('entries',slim); }catch(e){} try{ allChats[key]=slim; }catch(e){} try{ const un=(window.__unreadBox?window.__unreadBox():null); if(un) un[key]=(un[key]||0)+1; }catch(e){} try{ if(window.__saveUnread) window.__saveUnread(); }catch(e){} try{ renderDeck(); }catch(e){} }catch(e){} }
+async function __stashImg(ctxKey,whoId,src,meta,fx){ try{ const isG=ctxKey.indexOf('g:')===0; const key=isG?('g_'+ctxKey.slice(2)):whoId; const st=isG?root.chatSave[key]:cStore(whoId); let arr=[]; try{ arr=(await st.get('entries'))||[]; }catch(e){ try{ arr=allChats[key]||[]; }catch(_){} } const e={k:'i',s:src,who:whoId,id:(typeof newMid==='function'?newMid():'m'+Date.now()),ts:Date.now()}; if(meta){ if(meta.prompt) e.p=meta.prompt; if(meta.neg) e.n=meta.neg; if(meta.res) e.r=meta.res; if(meta.seed!=null) e.w=meta.seed; } arr.push(e); const slim=arr.slice(-80); try{ await st.set('entries',slim); }catch(e){} try{ allChats[key]=slim; }catch(e){} if(fx){ try{ const f=(await st.get('facts'))||{}; if(fx.outfit) f.outfit_current=String(fx.outfit).slice(0,120); if(fx.env) f.env_desc=String(fx.env).slice(0,500); await st.set('facts',f); }catch(e){} } try{ const un=(window.__unreadBox?window.__unreadBox():null); if(un) un[key]=(un[key]||0)+1; }catch(e){} try{ if(window.__saveUnread) window.__saveUnread(); }catch(e){} try{ renderDeck(); }catch(e){} try{ refreshGallery(); }catch(e){} try{ if(window.toast){ const m=roster.find(c=>c.id===whoId); window.toast((m?m.name:'Someone')+' sent a snap while you were away'); } }catch(e){} }catch(e){} }
+async function __persistImgSwap(oldSrc,newSrc){ try{ if(!oldSrc||!newSrc||oldSrc===newSrc) return; const touched=[]; for(const k of Object.keys(allChats)){ const a=allChats[k]; if(!Array.isArray(a)) continue; let ch=false; for(const e of a){ if(e&&e.k==='i'&&e.s===oldSrc){ e.s=newSrc; ch=true; } } if(ch) touched.push(k); } for(const k of touched){ try{ const st=(k.indexOf('g_')===0)?root.chatSave[k]:cStore(k); await st.set('entries',(allChats[k]||[]).slice(-80)); }catch(e){} } try{ refreshGallery(); }catch(e){} }catch(e){} }
+/* ==== dating-sim pack: gifts, dates, confession, sabotage, firsts ==== */
+const GIFT_CATALOG=[
+ {id:'coffee',emoji:'☕',name:'Coffee run',blurb:'her usual, remembered exactly right'},
+ {id:'flowers',emoji:'💐',name:'Flowers',blurb:'fresh, in her colors'},
+ {id:'choc',emoji:'🍫',name:'Chocolate',blurb:'the expensive stuff'},
+ {id:'plush',emoji:'🧸',name:'Plushie',blurb:'soft and stupid-cute'},
+ {id:'jewel',emoji:'💎',name:'Jewelry',blurb:'small, expensive-looking'},
+ {id:'lingerie',emoji:'🖤',name:'Lingerie',blurb:'for her eyes first… and off later'},
+];
+const TASTE_MAP={
+ kayla:{coffee:'like',flowers:'meh',choc:'love',plush:'love',jewel:'like',lingerie:'like'},
+ yuki:{coffee:'love',flowers:'love',choc:'like',plush:'like',jewel:'meh',lingerie:'meh'},
+ emi:{coffee:'like',flowers:'like',choc:'love',plush:'love',jewel:'love',lingerie:'love'},
+ mimi:{coffee:'meh',flowers:'like',choc:'love',plush:'love',jewel:'meh',lingerie:'like'},
+};
+async function ensureTastes(c){
+ try{
+  if(!c) return {};
+  if(c.tastes&&typeof c.tastes==='object') return c.tastes;
+  if(TASTE_MAP[c.id]){ c.tastes=Object.assign({},TASTE_MAP[c.id]); try{ saveDeck(); }catch(e){} return c.tastes; }
+  const raw=await aiText('You are casting tastes for an adult anime woman: '+c.name+' ('+(c.tagline||'')+', voice: '+String(c.personality||'').slice(0,250)+'). For each gift id, assign exactly one of love/like/meh/hate as HER taste: coffee, flowers, choc, plush, jewel, lingerie. Reply ONLY JSON like {"coffee":"like",...}. Only the JSON.');
+  const o=JSON.parse(String(raw).slice(String(raw).indexOf('{'),String(raw).lastIndexOf('}')+1));
+  const t={}; for(const g of GIFT_CATALOG){ const v=String((o&&o[g.id])||'like').toLowerCase(); t[g.id]=(v==='love'||v==='hate'||v==='meh')?v:'like'; }
+  c.tastes=t; try{ saveDeck(); }catch(e){} return t;
+ }catch(e){ return {}; }
+}
+function giftGirl(){ try{ if(typeof activeChar==='function'){ const c=activeChar(); if(c) return c; } }catch(e){} try{ return roster[0]||null; }catch(e){ return null; } }
+async function openGiftSheet(){
+ try{
+  const c=giftGirl(); if(!c) return;
+  document.getElementById('giftTitle').textContent='Spoil '+c.name;
+  const rows=document.getElementById('giftRows'); rows.innerHTML='<div class="msub">figuring out her taste…</div>';
+  document.getElementById('giftSheet').classList.add('on');
+  const tastes=await ensureTastes(c);
+  rows.innerHTML='';
+  for(const g of GIFT_CATALOG){
+   const d=document.createElement('div'); d.className='giftrow';
+   d.innerHTML='<span class="gemo">'+g.emoji+'</span><div><b></b><span></span></div>';
+   d.querySelector('b').textContent=g.name; d.querySelector('span').textContent=g.blurb;
+   const b=document.createElement('button'); b.className='hbtn on'; b.textContent='give';
+   b.onclick=()=>giveGift(c.id,g.id);
+   d.appendChild(b); rows.appendChild(d);
+  }
+ }catch(e){}
+}
+async function giveGift(id,giftId){
+ try{
+  const c=roster.find(x=>x.id===id); if(!c) return;
+  const g=GIFT_CATALOG.find(x=>x.id===giftId); if(!g) return;
+  let day='x'; try{ day=new Date().toISOString().slice(0,10); }catch(e){ day=String(Date.now()); }
+  if(c.giftDay===day){ try{ if(window.toast) window.toast('Already spoiled '+c.name+' today — tomorrow.'); }catch(e){} return; }
+  c.giftDay=day;
+  const tastes=await ensureTastes(c);
+  const taste=(tastes&&tastes[giftId])||'like';
+  const tone=taste==='love'?'adores it — this is exactly her thing, she is melting':taste==='like'?'likes it, genuinely pleased':taste==='meh'?'is lukewarm — polite thanks, zero spark':'HATES it — this was a miss and she is letting you know';
+  let line='';
+  try{
+   const __gb=(typeof bondNum==='function'?bondNum(c):1);
+   const raw=await aiText('You are '+c.name+' ('+(c.tagline||'')+', voice: '+String(c.personality||'').slice(0,250)+'). Preston just gave you '+g.name+' ('+g.blurb+'). Your honest reaction: '+tone+'. Bond '+__gb+'/10 (never state it): '+(__gb<2?'she barely knows him — surprised, walls cracking, bratty-soft, promises nothing physical':'honest reaction, promises allowed')+'. Reply with ONE short texting-style line IN CHARACTER (under 30 words, his name is Preston sometimes). Loved = gush. Hated = roast him, bratty, specific about why it sucks. Only the line.');
+   line=String(raw).trim().slice(0,250);
+  }catch(e){ line=''; }
+  if(!line) line=taste==='hate'?'seriously? '+g.name+'? do better.':taste==='love'?'oh my GOD. '+g.name+'. you actually GET me.':taste==='like'?'aww, '+g.name+'! thank you, Preston.':'oh. '+g.name+'. thanks, I guess.';
+  if(taste==='love'){ try{ window.bondGain(id,3); }catch(e){} try{ if(window.__bump) window.__bump(id,{love:8,interest:6,lust:2}); }catch(e){} }
+  else if(taste==='like'){ try{ window.bondGain(id,1); }catch(e){} try{ if(window.__bump) window.__bump(id,{love:4,interest:3}); }catch(e){} }
+  else if(taste==='meh'){ try{ if(window.__bump) window.__bump(id,{interest:1}); }catch(e){} }
+  else { try{ if(window.__bump) window.__bump(id,{love:-4,interest:-2}); }catch(e){} }
+  try{ if(!Array.isArray(c.diary))c.diary=[]; c.diary.push('He gave me '+g.name+' — '+(taste==='love'?'OBSESSED, he gets me':taste==='like'?'sweet, liked it':taste==='meh'?'meh, whatever':'hated it, told him so')+'.'); while(c.diary.length>8)c.diary.shift(); }catch(e){}
+  try{ saveDeck(); }catch(e){}
+  try{ document.getElementById('giftSheet').classList.remove('on'); }catch(e){}
+  try{
+   const live=(typeof activeId!=='undefined'&&activeId===id)&&!(window.__isGroup&&window.__isGroup());
+   if(live&&typeof addHerBubble==='function'){ addHerBubble(line); try{ chatHistory.push({role:'assistant',content:line}); }catch(e){} try{ renderDeck(); }catch(e){} }
+   else if(typeof __stashSolo==='function'){ await __stashSolo(id,{k:'k',t:line,id:(typeof newMid==='function'?newMid():'m'+Date.now()),ts:Date.now(),who:id}); }
+  }catch(e){}
+ }catch(e){}
+}
+function fmtCountdown(ts){ try{ const ms=ts-Date.now(); if(ms<=0) return 'now'; const h=Math.floor(ms/3600000), m=Math.round((ms%3600000)/60000); if(h<=0) return m+'m'; return h+'h '+(m<10?'0':'')+m+'m'; }catch(e){ return ''; } }
+async function datePropose(m){
+ try{
+  if(!m||m.met===false||m.muted) return 'skip';
+  if(m.date&&((m.date.status==='proposed')||(m.date.status==='accepted'))) return 'active';
+  if(m.dateCd&&Date.now()<m.dateCd) return 'cooldown';
+  const inH=4+Math.floor(Math.random()*5);
+  let place='a cute rooftop bar downtown', line='';
+  try{
+   const raw=await aiText('You are '+m.name+' ('+(m.tagline||'')+', voice: '+String(m.personality||'').slice(0,250)+'). You are working up the nerve to ASK PRESTON OUT on a real date — you like him, be nervous/excited in YOUR way, not generic. Reply ONLY JSON {"place":"specific date spot, 3-8 words","line":"the actual ask, one texting line under 30 words, his name is Preston"}. '+soulBrief(m)+' Only the JSON.');
+   const o=JSON.parse(String(raw).slice(String(raw).indexOf('{'),String(raw).lastIndexOf('}')+1));
+   if(o&&o.place) place=String(o.place).slice(0,80);
+   if(o&&o.line) line=String(o.line).slice(0,200);
+  }catch(e){}
+  if(!line) line='so… '+place+'. me. you. tonight-ish. say yes, Preston.';
+  m.date={place:place,time:Date.now()+inH*3600000,status:'proposed',askedTs:Date.now()};
+  try{ saveDeck(); }catch(e){}
+  try{ if(!Array.isArray(m.diary))m.diary=[]; m.diary.push('Asked him out: '+place+'. Hope he says yes.'); while(m.diary.length>8)m.diary.shift(); }catch(e){}
+  if(typeof __stashSolo==='function') await __stashSolo(m.id,{k:'k',t:line,id:(typeof newMid==='function'?newMid():'m'+Date.now()),ts:Date.now(),who:m.id});
+  try{ if(window.toast) window.toast(m.name+' asked you out — check 📅'); }catch(e){}
+  try{ renderDeck(); }catch(e){}
+  return 'proposed:'+m.id;
+ }catch(e){ return 'err'; }
+}
+async function dateResolve(c,withHer){
+ try{
+  const d=c.date; if(!d||d.status!=='accepted') return 'skip';
+  d.status=withHer?'done':'stoodup';
+  try{ saveDeck(); }catch(e){}
+  if(withHer){
+   let recap='';
+   try{
+    const raw=await aiText('You are '+c.name+' ('+(c.tagline||'')+', voice: '+String(c.personality||'').slice(0,250)+'). You just had a date with Preston at '+d.place+'. Gush: what happened, one specific moment that made your stomach flip, how he was. 100-150 words, past tense, her crude voice. Bond '+bondNum(c)+'/10 physicality rule: '+(bondNum(c)<6?'sweet and charged but NOTHING explicit happened — holding hands at most, leave him wanting':'as heated as it honestly got, no limits')+'. Recent memories: '+(((c.mem||[]).slice(-3).join(' / '))||'none')+'. '+soulBrief(c)+' Only the recap.');
+    recap=String(raw).trim().slice(0,900);
+   }catch(e){}
+   if(!recap) recap='last night at '+d.place+'… ugh. replaying it over and over. he was perfect and I almost said something stupid.';
+   try{ if(!Array.isArray(c.mem))c.mem=[]; c.mem.push('Date at '+d.place+': '+recap.slice(0,100)); c.mem=c.mem.slice(-60); }catch(e){}
+   try{ if(!Array.isArray(c.diary))c.diary=[]; c.diary.push('DATE. '+d.place+'. '+recap.slice(0,80)); while(c.diary.length>8)c.diary.shift(); }catch(e){}
+   try{ if(window.bondGain) window.bondGain(c.id,3); }catch(e){}
+   try{ if(window.__bump) window.__bump(c.id,{love:6,interest:5,lust:4}); }catch(e){}
+   try{
+    const live=(typeof activeId!=='undefined'&&activeId===c.id)&&!(window.__isGroup&&window.__isGroup());
+    if(live&&typeof addHerBubble==='function'){ addHerBubble(recap); try{ chatHistory.push({role:'assistant',content:recap}); }catch(e){} }
+    else if(typeof __stashSolo==='function'){ await __stashSolo(c.id,{k:'k',t:recap,id:(typeof newMid==='function'?newMid():'m'+Date.now()),ts:Date.now(),who:c.id}); }
+   }catch(e){}
+   if(bondNum(c)>=4){
+    try{
+     const gf=await girlFacts(c.id);
+     const wear=((gf.outfit_current||c.outfit)||'').slice(0,200);
+     const pr=photoPrompt(c,{variant:'CLOTHED',activity:'candid selfie on a date at '+d.place+', happy, glowing, dressed up for him',outfit:wear,setting:d.place||'her room',framing:'solo front-camera selfie, arm extended holding smartphone, looking into the lens, single girl only, no extra people, no duplicates',extra:''});
+     const neg=negFor(c,'CLOTHED',{explicit:false})+', nude, naked, explicit, nudity, nipples';
+     const r=await image(pr,{resolution:'512x768',negativePrompt:neg,seed:Math.floor(Math.random()*2147483647),guidanceScale:8});
+     const src=r&&(r.dataUrl||r);
+     if(src&&typeof src==='string'&&src.indexOf('data:')===0&&typeof __stashImg==='function') await __stashImg(c.id,c.id,src,{p:pr,n:neg,r:'512x768',w:0},null);
+    }catch(e){}
+   }
+  } else {
+   c.bond=Math.max(0,(c.bond||0)-2);
+   c.grudge={why:'stood me up for our date at '+d.place,until:Date.now()+48*3600000};
+   try{ if(!Array.isArray(c.diary))c.diary=[]; c.diary.push('He STOOD ME UP at '+d.place+'. Crying then furious. Not forgetting.'); while(c.diary.length>8)c.diary.shift(); }catch(e){}
+   try{ if(window.__bump) window.__bump(c.id,{love:-8,interest:-5}); }catch(e){}
+   try{ saveDeck(); }catch(e){}
+   let mad='';
+   try{
+    const raw=await aiText('You are '+c.name+' ('+(c.tagline||'')+', voice: '+String(c.personality||'').slice(0,250)+'). Preston stood you up for your date at '+d.place+' — no show, no text. Send ONE furious hurt texting line (under 30 words). No forgiveness yet. Only the text.');
+    mad=String(raw).trim().slice(0,250);
+   }catch(e){}
+   if(!mad) mad='wow. '+d.place+'. me. alone. you never showed. we are DONE talking about it — no we are NOT.';
+   if(typeof __stashSolo==='function') await __stashSolo(c.id,{k:'k',t:mad,id:(typeof newMid==='function'?newMid():'m'+Date.now()),ts:Date.now(),who:c.id});
+  }
+  try{ renderDeck(); }catch(e){}
+  return 'resolved:'+c.id+':'+d.status;
+ }catch(e){ return 'err'; }
+}
+async function dateTick(){
+ try{
+  if(window.__devMode) return 'dev';
+  const now=Date.now();
+  for(const c of (typeof roster!=='undefined'?roster:[])){
+   try{
+    if(!c||!c.date) continue;
+    if(c.date.status==='accepted'&&now>=c.date.time){
+     let withHer=false; try{ withHer=(window.AG&&window.AG.ctx&&window.AG.ctx.with===c.id); }catch(e){}
+     await dateResolve(c,withHer);
+    } else if(c.date.status==='proposed'&&now>c.date.time){
+     c.date.status='declined'; c.dateCd=now+48*3600000;
+     try{ if(!Array.isArray(c.diary))c.diary=[]; c.diary.push('Asked him out and he just… never answered. Cool. Not asking again soon.'); while(c.diary.length>8)c.diary.shift(); }catch(e){}
+     try{ if(window.__bump) window.__bump(c.id,{love:-3,interest:-2}); }catch(e){}
+     try{ saveDeck(); }catch(e){}
+     if(typeof __stashSolo==='function') await __stashSolo(c.id,{k:'k',t:'…never mind. forget I asked. see what I get for being brave.',id:(typeof newMid==='function'?newMid():'m'+Date.now()),ts:Date.now(),who:c.id});
+    }
+   }catch(e){}
+  }
+  if(Math.random()>0.4) return 'skip';
+  const pool=(typeof roster!=='undefined'?roster:[]).filter(c=>c&&c.met!==false&&!c.muted&&!(c.sulkUntil&&Date.now()<c.sulkUntil)&&bondNum(c)>=4&&!(c.date&&(c.date.status==='proposed'||c.date.status==='accepted'))&&!(c.dateCd&&now<c.dateCd));
+  if(!pool.length) return 'nobody';
+  pool.sort((a,b)=>(bondNum(b)+Math.random()*3)-(bondNum(a)+Math.random()*3));
+  return await datePropose(pool[0]);
+ }catch(e){ return 'err'; }
+}
+setInterval(()=>{ try{ dateTick(); }catch(e){} },150000);
+window.__dateTick=dateTick;
+function renderDates(){
+ try{
+  const rows=document.getElementById('dateRows'); if(!rows) return;
+  rows.innerHTML='';
+  let any=false;
+  for(const c of (typeof roster!=='undefined'?roster:[])){
+   if(!c||!c.date||!c.date.place) continue;
+   const d=c.date; any=true;
+   const div=document.createElement('div'); div.className='daterow';
+   const st=d.status==='proposed'?('wants an answer · '+fmtCountdown(d.time)):d.status==='accepted'?('locked in · '+fmtCountdown(d.time)):d.status;
+   div.innerHTML='<span class="gemo">📅</span><div><b></b><span></span></div>';
+   div.querySelector('b').textContent=c.name+' — '+d.place;
+   div.querySelector('span').textContent=st;
+   const box=document.createElement('div'); box.style.marginLeft='auto'; box.style.display='flex'; box.style.gap='6px';
+   if(d.status==='proposed'){
+    const ya=document.createElement('button'); ya.className='hbtn on'; ya.textContent='say yes';
+    ya.onclick=()=>dateDecide(c.id,true); box.appendChild(ya);
+    const na=document.createElement('button'); na.className='hbtn'; na.textContent="can't";
+    na.onclick=()=>dateDecide(c.id,false); box.appendChild(na);
+   } else if(d.status==='accepted'){
+    const ca=document.createElement('button'); ca.className='hbtn'; ca.textContent="can't make it";
+    ca.onclick=()=>dateCancel(c.id); box.appendChild(ca);
+   }
+   div.appendChild(box); rows.appendChild(div);
+  }
+  if(!any) rows.innerHTML='<div class="msub">No dates yet. Get to bond 4 and she might work up the nerve to ask.</div>';
+ }catch(e){}
+}
+function openDates(){ try{ renderDates(); document.getElementById('dateSheet').classList.add('on'); }catch(e){} }
+async function dateDecide(id,yes){
+ try{
+  const c=roster.find(x=>x.id===id); if(!c||!c.date) return;
+  if(yes){
+   c.date.status='accepted'; c.dateCd=0;
+   try{ if(!Array.isArray(c.diary))c.diary=[]; c.diary.push('HE SAID YES. '+c.date.place+'. outfit planning starts NOW.'); while(c.diary.length>8)c.diary.shift(); }catch(e){}
+   try{ saveDeck(); }catch(e){}
+   let happy='';
+   try{
+    const raw=await aiText('You are '+c.name+' ('+(c.tagline||'')+', voice: '+String(c.personality||'').slice(0,250)+'). Preston just said YES to your date at '+c.date.place+'. React in ONE short texting line (under 25 words) — thrilled, already planning the outfit. Only the line.');
+    happy=String(raw).trim().slice(0,200);
+   }catch(e){}
+   if(!happy) happy='YES. '+c.date.place+'. be there. I already know what I am wearing.';
+   try{
+    const live=(typeof activeId!=='undefined'&&activeId===id)&&!(window.__isGroup&&window.__isGroup());
+    if(live&&typeof addHerBubble==='function'){ addHerBubble(happy); try{ chatHistory.push({role:'assistant',content:happy}); }catch(e){} }
+    else if(typeof __stashSolo==='function'){ await __stashSolo(id,{k:'k',t:happy,id:(typeof newMid==='function'?newMid():'m'+Date.now()),ts:Date.now(),who:id}); }
+   }catch(e){}
+  } else {
+   c.date.status='declined'; c.dateCd=Date.now()+48*3600000;
+   try{ if(!Array.isArray(c.diary))c.diary=[]; c.diary.push('He said no to '+c.date.place+'. Acting like it is fine. It is not fine.'); while(c.diary.length>8)c.diary.shift(); }catch(e){}
+   try{ if(window.__bump) window.__bump(id,{love:-3,interest:-2}); }catch(e){}
+   try{ saveDeck(); }catch(e){}
+   let sad='';
+   try{
+    const raw=await aiText('You are '+c.name+' ('+(c.tagline||'')+', voice: '+String(c.personality||'').slice(0,250)+'). Preston turned down your date at '+c.date.place+'. Reply in ONE short texting line (under 25 words) — brave face, hurt underneath. Only the line.');
+    sad=String(raw).trim().slice(0,200);
+   }catch(e){}
+   if(!sad) sad='…oh. okay. no big deal. forget I asked, k?';
+   if(typeof __stashSolo==='function') await __stashSolo(id,{k:'k',t:sad,id:(typeof newMid==='function'?newMid():'m'+Date.now()),ts:Date.now(),who:id});
+  }
+  try{ renderDates(); renderDeck(); }catch(e){}
+ }catch(e){}
+}
+async function dateCancel(id){
+ try{
+  const c=roster.find(x=>x.id===id); if(!c||!c.date) return;
+  const place=c.date.place||'our date';
+  c.date.status='declined'; c.dateCd=Date.now()+48*3600000;
+  c.grudge={why:'cancelled '+place+' last minute',until:Date.now()+12*3600000};
+  try{ if(!Array.isArray(c.diary))c.diary=[]; c.diary.push('He CANCELLED '+place+'. Had the outfit and everything.'); while(c.diary.length>8)c.diary.shift(); }catch(e){}
+  try{ if(window.__bump) window.__bump(id,{love:-4,interest:-3}); }catch(e){}
+  try{ saveDeck(); }catch(e){}
+  if(typeof __stashSolo==='function') await __stashSolo(id,{k:'k',t:'cancel on ME for '+place+'? really? hope she is worth it.',id:(typeof newMid==='function'?newMid():'m'+Date.now()),ts:Date.now(),who:id});
+  try{ renderDates(); renderDeck(); }catch(e){}
+ }catch(e){}
+}
+async function confessFire(id){
+ try{
+  const c=roster.find(x=>x.id===id); if(!c||c.exclusive) return;
+  c.confessPending=true;
+  try{ saveDeck(); }catch(e){}
+  let buildup='';
+  try{
+   const raw=await aiText('You are '+c.name+' ('+(c.tagline||'')+', voice: '+String(c.personality||'').slice(0,250)+'). You have decided TONIGHT is the night you tell Preston how deep this goes — you are nervous, serious under the brat. Send ONE short texting buildup line (under 30 words, his name is Preston): you need to see him / need to tell him something big tonight. Do NOT confess yet, just set the moment. Only the line.');
+   buildup=String(raw).trim().slice(0,250);
+  }catch(e){}
+  if(!buildup) buildup='Preston. tonight. I need to tell you something real. come see me.';
+  if(typeof __stashSolo==='function') await __stashSolo(id,{k:'k',t:buildup,id:(typeof newMid==='function'?newMid():'m'+Date.now()),ts:Date.now(),who:id});
+  try{ if(window.toast) window.toast(c.name+' needs to tell you something — open her chat 💍'); }catch(e){}
+ }catch(e){}
+}
+function confessOpen(id){
+ try{
+  const c=roster.find(x=>x.id===id); if(!c) return;
+  closeConfess();
+  const ov=document.createElement('div'); ov.id='eventOverlay';
+  ov.innerHTML='<div class="evbox"><img class="evface"><h3></h3><div class="evsub">she takes your hands. this is the moment.</div><div class="evline"></div><div class="evchoices"></div></div>';
+  try{ ov.querySelector('.evface').src=c.pfp||'src/images/kayla-pfp.jpg'; }catch(e){}
+  ov.querySelector('h3').textContent=c.name;
+  document.body.appendChild(ov);
+  const lineEl=ov.querySelector('.evline'); lineEl.textContent='I have tried to play it cool and I am terrible at it. It is you. It has been you. Be mine — only mine?';
+  (async()=>{
+   let line='';
+   try{
+    const mems=((c.mem||[]).slice(-3).join(' / '))||'none';
+    const raw=await aiText('You are '+c.name+' ('+(c.tagline||'')+', voice: '+String(c.personality||'').slice(0,300)+'). Bond 8/10 with Preston — you are confessing. Tell him, in YOUR voice: you are HIS, you want him exclusively, no one else. Reference one real memory below if it fits ('+mems+'). 60-100 words, raw and unsteady, then the question: be mine, only mine? Only the confession.');
+    line=String(raw).trim().slice(0,600);
+   }catch(e){}
+   if(!line) line='I have tried to play it cool and I am terrible at it. It is you. It has been you. Be mine — only mine?';
+   try{ lineEl.textContent=line; }catch(e){}
+  })();
+  const box=ov.querySelector('.evchoices');
+  const mk=(label,cls,fn)=>{ const b=document.createElement('button'); b.className='hbtn '+cls; b.textContent=label; b.onclick=fn; box.appendChild(b); };
+  mk("Be hers — exclusive",'on',()=>confessChoose(id,'yes'));
+  mk("Not yet",'',()=>confessChoose(id,'no'));
+  mk("I need time",'',()=>confessChoose(id,'time'));
+ }catch(e){}
+}
+function closeConfess(){ try{ const o=document.getElementById('eventOverlay'); if(o) o.remove(); }catch(e){} }
+async function confessChoose(id,choice){
+ try{
+  const c=roster.find(x=>x.id===id); if(!c) return;
+  window.__confessBusy=window.__confessBusy||{};
+  if(window.__confessBusy[id]) return;
+  window.__confessBusy[id]=true;
+  try{ closeConfess(); }catch(e){}
+  c.confessPending=false;
+  try{ saveDeck(); }catch(e){}
+  const __live=(typeof activeId!=='undefined'&&activeId===id)&&!(window.__isGroup&&window.__isGroup());
+  let __typingEl=null;
+  try{ if(__live&&typeof addTypingBubble==='function') __typingEl=addTypingBubble(c.name+' is typing'); }catch(e){}
+  let reaction='';
+  if(choice==='yes'){
+   c.exclusive={ts:Date.now()}; c.confessAsked=true;
+   try{ if(!Array.isArray(c.diary))c.diary=[]; c.diary.push("WE ARE HIS/HERS. Exclusive. Nobody touches what's mine."); while(c.diary.length>8)c.diary.shift(); }catch(e){}
+   try{ saveDeck(); }catch(e){}
+   try{
+    const raw=await aiText('You are '+c.name+' ('+(c.tagline||'')+', voice: '+String(c.personality||'').slice(0,250)+'). Preston just said YES to being exclusive — you are HIS and he is YOURS. React in 40-60 words: over the moon, possessive, already staking the claim. Only the reaction.');
+    reaction=String(raw).trim().slice(0,400);
+   }catch(e){}
+   if(!reaction) reaction='MINE. all mine. nobody else gets to look at you now, Preston.';
+   try{
+    const rivals=roster.filter(x=>x.id!==id&&x.met!==false&&!x.muted&&bondNum(x)>=4).sort((a,b)=>bondNum(b)-bondNum(a));
+    if(rivals.length&&Math.random()<0.7&&typeof girlFeedPost==='function'){ try{ await girlFeedPost(rivals[0],c.name); }catch(e){} }
+   }catch(e){}
+   try{ if(window.toast) window.toast(c.name+' is yours — exclusively 💍'); }catch(e){}
+  } else if(choice==='no'){
+   c.confessAsked=false; c.confessSnooze=Date.now()+3*86400000;
+   try{ if(!Array.isArray(c.diary))c.diary=[]; c.diary.push('Told him everything and he said NOT YET. Smiling through it. Dying inside.'); while(c.diary.length>8)c.diary.shift(); }catch(e){}
+   try{ if(window.__bump) window.__bump(id,{love:-4,interest:-2}); }catch(e){}
+   try{ saveDeck(); }catch(e){}
+   try{
+    const raw=await aiText('You are '+c.name+' ('+(c.tagline||'')+', voice: '+String(c.personality||'').slice(0,250)+'). You just poured your heart out and Preston said "not yet". Reply in 30-50 words: brave face, cracks showing, you are not giving up on him. Only the reply.');
+    reaction=String(raw).trim().slice(0,350);
+   }catch(e){}
+   if(!reaction) reaction='…okay. not yet. that is fine. I can wait. I am not going anywhere, Preston.';
+  } else {
+   c.confessAsked=false; c.confessSnooze=Date.now()+2*86400000;
+   try{ if(!Array.isArray(c.diary))c.diary=[]; c.diary.push('He needs time. I can give him time. Hope it is not a no.'); while(c.diary.length>8)c.diary.shift(); }catch(e){}
+   try{ if(window.__bump) window.__bump(id,{love:2}); }catch(e){}
+   try{ saveDeck(); }catch(e){}
+   try{
+    const raw=await aiText('You are '+c.name+' ('+(c.tagline||'')+', voice: '+String(c.personality||'').slice(0,250)+'). Preston said he needs time after your confession. Reply in 30-50 words: understanding, hopeful, a little scared. Only the reply.');
+    reaction=String(raw).trim().slice(0,350);
+   }catch(e){}
+   if(!reaction) reaction='take your time. I will be right here. just… do not take forever, k?';
+  }
+  try{ if(__typingEl) __typingEl.remove(); }catch(e){}
+  try{
+    if(__live&&typeof addHerBubble==='function'){ addHerBubble(reaction); try{ chatHistory.push({role:'assistant',content:reaction}); }catch(e){} }
+    else if(typeof __stashSolo==='function'){ await __stashSolo(id,{k:'k',t:reaction,id:(typeof newMid==='function'?newMid():'m'+Date.now()),ts:Date.now(),who:id}); }
+   }catch(e){}
+   try{ renderDeck(); }catch(e){}
+   window.__confessBusy[id]=false;
+  }catch(e){ try{ window.__confessBusy[id]=false; }catch(_){} try{ closeConfess(); }catch(_){} }
+}
+async function sabotageTick(){
+ try{
+  if(window.__devMode) return 'dev';
+  const now=Date.now();
+  let withR=null; try{ withR=(window.AG&&window.AG.ctx&&window.AG.ctx.with)||null; }catch(e){}
+  for(const g of (typeof roster!=='undefined'?roster:[])){
+   try{
+    if(!g||g.met===false||g.muted) continue;
+    if(bondNum(g)<6) continue;
+    if(g.sabCd&&now<g.sabCd) continue;
+    const rival=withR&&withR!==g.id?roster.find(x=>x.id===withR):null;
+    const exclusiveElsewhere=rival&&rival.exclusive;
+    const roll=Math.random();
+    if(rival&&(roll<0.45||(exclusiveElsewhere&&roll<0.6))){
+     g.sabCd=now+(20+Math.random()*8)*3600000;
+     try{ saveDeck(); }catch(e){}
+     const kind=Math.random();
+     if(kind<0.4&&typeof girlFeedPost==='function'){
+      try{ await girlFeedPost(g,rival.name); }catch(e){}
+      try{ if(!Array.isArray(g.diary))g.diary=[]; g.diary.push('Posted shade about '+rival.name+'. He is with HER right now. Watch me.'); while(g.diary.length>8)g.diary.shift(); }catch(e){}
+     } else if(kind<0.75||!rival.date||rival.date.status!=='accepted'){
+      let jab='';
+      try{
+       const raw=await aiText('You are '+g.name+' ('+(g.tagline||'')+', voice: '+String(g.personality||'').slice(0,250)+'). Preston is irl with '+rival.name+' RIGHT NOW and you are jealous out of your mind — bond '+bondNum(g)+'/10'+(g.exclusive?', and he is YOURS exclusively, this is betrayal':'')+'. Send ONE guilt-trippy possessive texting line (under 30 words, his name is Preston): enjoy her, don\'t forget who aches for you, come back. Only the line. '+soulBrief(g));
+       jab=String(raw).trim().slice(0,250);
+      }catch(e){}
+      if(!jab) jab='enjoying her? 🙃 do not forget who is actually aching for you, Preston. come back.';
+      if(typeof __stashSolo==='function') await __stashSolo(g.id,{k:'k',t:jab,id:(typeof newMid==='function'?newMid():'m'+Date.now()),ts:Date.now(),who:g.id});
+      try{ if(!Array.isArray(g.diary))g.diary=[]; g.diary.push('Texted him while he is with '+rival.name+'. Could not help it.'); while(g.diary.length>8)g.diary.shift(); }catch(e){}
+     } else {
+      const dt=rival.date;
+      let poison='';
+      try{
+       const raw=await aiText('You are '+g.name+' ('+(g.tagline||'')+', voice: '+String(g.personality||'').slice(0,250)+'). Preston has a date with '+rival.name+' at '+dt.place+' and you are NOT okay — bond '+bondNum(g)+'/10. Send ONE poisonous sweet texting line (under 30 words, his name is Preston): plant doubt, remind him what he would be missing with YOU. Only the line. '+soulBrief(g));
+       poison=String(raw).trim().slice(0,250);
+      }catch(e){}
+      if(!poison) poison='so… '+dt.place+' with HER. hope she is worth what you would be doing with me instead.';
+      if(typeof __stashSolo==='function') await __stashSolo(g.id,{k:'k',t:poison,id:(typeof newMid==='function'?newMid():'m'+Date.now()),ts:Date.now(),who:g.id});
+      try{ if(!Array.isArray(g.diary))g.diary=[]; g.diary.push('Tried to poison his date with '+rival.name+'. No regrets.'); while(g.diary.length>8)g.diary.shift(); }catch(e){}
+     }
+     try{ if(window.__bump) window.__bump(g.id,{interest:2}); }catch(e){}
+     try{ saveDeck(); }catch(e){}
+    }
+   }catch(e){}
+  }
+  return 'ok';
+ }catch(e){ return 'err'; }
+}
+setInterval(()=>{ try{ sabotageTick(); }catch(e){} },150000);
+window.__sabotageTick=sabotageTick;
+function renderSetInbox(){ try{ const box=document.getElementById('setInboxList'); if(!box) return; box.innerHTML=''; const un=((window.__unreadBox?window.__unreadBox():null)||{}); const items=[]; try{ for(const c of roster){ const arr=allChats[c.id]||[]; let prev='no chat yet'; for(let i=arr.length-1;i>=0;i--){ const e=arr[i]; if(!e) continue; if(e.k==='u'){ prev='You: '+String(e.t||'').slice(0,48); break; } if(e.k==='k'){ const m=roster.find(x=>x.id===e.who); prev=((m&&m.name)||'Her')+': '+String(e.t||'').slice(0,48); break; } if(e.k==='i'){ prev='\uD83D\uDCF8 snap'; break; } } items.push({kind:'solo',id:c.id,name:c.name,sub:((c.muted?'\uD83D\uDD15 ':'')+((typeof relStatus==='function')?relStatus(c):'')+' \u2022 '+(c.tagline||'')),solo:true,prev:prev,un:un[c.id]||0}); } const gs=(window.__groups?window.__groups():[]); for(const g of gs){ const key='g_'+g.id; const arr=allChats[key]||[]; let prev='no chat yet'; for(let i=arr.length-1;i>=0;i--){ const e=arr[i]; if(!e) continue; if(e.k==='u'){ prev='You: '+String(e.t||'').slice(0,48); break; } if(e.k==='k'){ const m=roster.find(x=>x.id===e.who); prev=((m&&m.name)||'Her')+': '+String(e.t||'').slice(0,48); break; } if(e.k==='i'){ prev='\uD83D\uDCF8 snap'; break; } } let sub=''; try{ sub=(g.memberIds||[]).map(id=>{ const m=roster.find(x=>x.id===id); return m?m.name:'?'; }).join(' \u00b7 '); }catch(e){} items.push({kind:'group',id:g.id,name:g.name,sub:sub,solo:false,prev:prev,un:un[key]||0}); } }catch(e){} if(!items.length){ box.innerHTML='<div style="color:var(--text-3);font-size:var(--fs-sm)">No chats yet.</div>'; return; } for(const it of items){ const b=document.createElement('button'); b.className='conv'; const av=it.solo?((roster.find(x=>x.id===it.id)||{}).pfp||'src/images/kayla-pfp.jpg'):null; b.innerHTML=(it.solo?'<span class="conva"><img src="'+esc(av)+'"></span>':'<span class="conva stack"><span style="font-size:18px">\u25C9</span></span>')+'<span class="convmeta"><b>'+esc(it.name)+'</b><span class="prev">'+esc(it.prev)+'</span><span class="sub">'+esc(it.sub||'')+'</span></span>'+(it.un?'<span class="unreadbadge">\uD83D\uDCAC '+it.un+'</span>':''); b.onclick=(()=>{ const k=it.kind, i=it.id; return ()=>{ try{ document.getElementById('setSheet').classList.remove('on'); }catch(e){} if(k==='solo'){ try{enterChat(i);}catch(e){} } else { try{enterGroup(i);}catch(e){} } }; })(); box.appendChild(b); } }catch(e){} }
+window.renderSetInbox=renderSetInbox;
+window.aghPass4=true;
+</script>
+
+<script>
+/* ==== sixth pass: opt-in gallery + girl merge ==== */
+function findImgEntry(row){ try{ const mid=row.dataset.mid; if(mid){ for(const e of savedEntries){ if(e&&e.id===mid) return e; } } const im=row.querySelector('img.snap'); const src=im?im.getAttribute('src'):null; if(src){ for(let i=savedEntries.length-1;i>=0;i--){ const e=savedEntries[i]; if(e&&e.k==='i'&&e.s===src) return e; } } }catch(e){} return null; }
+function wireSaveBtn(row){ try{ const b=row.querySelector('.saveBtn'); if(!b||b.dataset.w) return; b.dataset.w='1'; const sync=()=>{ try{ const e=findImgEntry(row); const on=!!(e&&e.sv); b.textContent=on?'saved \u2713':'save'; b.classList.toggle('on',on); }catch(_){} }; b.onclick=()=>{ try{ const e=findImgEntry(row); if(!e) return; if(e.sv) delete e.sv; else e.sv=1; queueSave(); refreshGallery(); sync(); }catch(_){} }; try{ sync(); }catch(_){} }catch(e){} }
+async function unsaveGalEntry(entryId,storeKey){ try{ if(!entryId||!storeKey) return; if(String(storeKey)==='feed'){ try{ const __fd=(window.__feed?window.__feed():[]); const __e=__fd.find(x=>x&&x.id===entryId); if(!__e) return; delete __e.sv; }catch(_){ return; } try{ if(window.__touchFeed) window.__touchFeed(); }catch(_){} try{ refreshGallery(); }catch(_){} try{ if(window.toast) window.toast('removed from gallery'); }catch(_){} return; } const arr=allChats[storeKey]||[]; const e=arr.find(x=>x&&x.id===entryId); if(!e) return; delete e.sv; try{ const st=(String(storeKey).indexOf('g_')===0)?root.chatSave[storeKey]:cStore(storeKey); await st.set('entries',arr.slice(-80)); }catch(_){} try{ refreshGallery(); }catch(_){} try{ if(window.toast) window.toast('removed from gallery'); }catch(_){} }catch(e){} }
+async function mergeGirlFile(file){ try{
+  const data=JSON.parse(await file.text());
+  if(!data||!Array.isArray(data.roster)||!data.roster.length) throw new Error('not a deck backup');
+  let n=0;
+  for(const g of data.roster){ try{
+    if(!g||!g.id) continue;
+    const ix=roster.findIndex(x=>x.id===g.id);
+    if(ix>=0){ const keep=roster[ix]; const merged=Object.assign({},keep,g,{id:keep.id}); for(const k of ['bond','peak','bondDay','xchg','lastContact','love','lust','interest','orbs','mem','muted','sulkUntil','sulkBoost']) if(keep[k]!==undefined) merged[k]=keep[k]; if(keep.met!==false) merged.met=keep.met; for(const k of Object.keys(keep)) if(k.indexOf('bondM')===0) merged[k]=keep[k]; try{window.bondEnsure(merged);}catch(e){} roster[ix]=merged; }
+    else { roster.push(Object.assign({},g)); if(!g.met) roster[roster.length-1].met=false; }
+    const entries=(data.allChats&&data.allChats[g.id])||[];
+    allChats[g.id]=Array.isArray(entries)?entries.slice(-80):[];
+    try{ await cStore(g.id).set('entries',allChats[g.id]); }catch(_){}
+    try{ const un=(window.__unreadBox?window.__unreadBox():null); if(un) un[g.id]=0; }catch(_){}
+    try{ if(window.__saveUnread) window.__saveUnread(); }catch(_){}
+    try{ if(window.__touchConv) window.__touchConv(g.id); }catch(_){}
+    n++;
+  }catch(_){} }
+  try{ const gs=Array.isArray(data.groups)?data.groups:[]; const live=(window.__groups?window.__groups():[]); for(const gg of gs){ if(gg&&gg.id&&!live.find(x=>x.id===gg.id)) live.push(gg); } try{ await deckStore.set('groups',live); }catch(_){} try{ if(window.__renderGroups) window.__renderGroups(); }catch(_){} }catch(_){}
+  try{ await saveDeck(); }catch(_){}
+  try{ renderDeck(); }catch(_){}
+  try{ refreshGallery(); }catch(_){}
+  try{ await loadChar(activeId); }catch(_){}
+  try{ syncHeader(); }catch(_){}
+  try{ if(window.toast) window.toast(n?('merged '+n+' girl'+(n===1?'':'s')+' — chats + personalities kept'):'nothing merged'); }catch(_){}
+}catch(e){ try{ if(window.toast) window.toast('merge failed: '+(e&&e.message?e.message:e)); }catch(_){} } }
+try{ const _mg=document.getElementById('setMergeGirl'); const _mf=document.getElementById('setMergeFile'); if(_mg&&_mf){ _mg.onclick=()=>{ try{ _mf.click(); }catch(e){} }; _mf.onchange=e=>{ const f=e.target.files[0]; if(f) mergeGirlFile(f); e.target.value=''; }; } }catch(e){}
+window.aghPass6=true;

@@ -1,0 +1,500 @@
+        hideEmpty();
+        const d=document.createElement('div'); d.className='memchip';
+        const c=activeChar();
+        d.textContent='📌 '+(c?c.name:'She')+' will remember that';
+        log.appendChild(d); scrollBottom();
+      }
+    }catch(e){}
+    return r;
+  };
+}catch(e){}
+try{
+  const _om=openMeterSheet;
+  openMeterSheet=function(){
+    const r=_om();
+    try{
+      const rows=document.getElementById('meterRows'); if(!rows) return r;
+      let list=[];
+      try{ if(isGroupMode()){ list=membersOf(groupById(activeGroupId)); } else { const c=activeChar(); if(c) list=[c]; } }catch(e){}
+      const mem=document.createElement('div'); mem.style.marginTop='10px';
+      mem.innerHTML='<h3 style="margin:var(--s-2) 0 var(--s-1);font-size:var(--fs-sm)">💭 She remembers</h3>';
+      const es=Object.entries(facts||{});
+      if(!es.length) mem.innerHTML+='<div style="font-size:var(--fs-xs);color:var(--text-3)">nothing pinned yet — long-press any message to pin it.</div>';
+      es.slice(-12).forEach(([k,v])=>{
+        const d=document.createElement('div'); d.className='mrow';
+        d.innerHTML='<div class="minfo"><span></span></div>';
+        d.querySelector('span').textContent=String(v).slice(0,140);
+        const x=document.createElement('button'); x.textContent='✕'; x.title='forget this';
+        x.onclick=()=>{ try{ delete facts[k]; queueSave(); d.remove(); }catch(e){} };
+        d.appendChild(x); mem.appendChild(d);
+      });
+      rows.appendChild(mem);
+    }catch(e){}
+    return r;
+  };
+}catch(e){}
+try{
+  const _qsS=queueSave;
+  queueSave=function(){
+    try{ for(const e of savedEntries){ if(e&&!e.id){ e.id=newMid(); e.ts=e.ts||Date.now(); } } }catch(e){}
+    return _qsS();
+  };
+}catch(e){}
+try{
+  const si=document.getElementById('inboxSearch');
+  if(si) si.addEventListener('input',()=>{
+    try{
+      const q=si.value.trim().toLowerCase();
+      const hitKeys=q.length>=3?{}:null;
+      if(hitKeys){
+        for(const c of roster){ const a=allChats[c.id]||[]; for(let i=a.length-1;i>=0;i--){ const e=a[i]; if(e&&(e.k==='u'||e.k==='k')&&String(e.t||'').toLowerCase().includes(q)){ hitKeys[c.id]=1; break; } } }
+        try{ for(const g of groups){ const a=allChats['g_'+g.id]||[]; for(let i=a.length-1;i>=0;i--){ const e=a[i]; if(e&&(e.k==='u'||e.k==='k')&&String(e.t||'').toLowerCase().includes(q)){ hitKeys['g_'+g.id]=1; break; } } } }catch(e){}
+      }
+      document.querySelectorAll('#inboxList .conv').forEach(b=>{
+        const t=b.textContent.toLowerCase();
+        const deep=hitKeys&&b.dataset.ckey&&hitKeys[b.dataset.ckey];
+        b.style.display=(!q||t.includes(q)||deep)?'':'none';
+      });
+    }catch(e){}
+  });
+}catch(e){}
+try{
+  const palList=document.getElementById('paletteList'), pIn=document.getElementById('paletteInput');
+  let _palGuard=false;
+  new MutationObserver(()=>{
+    if(_palGuard) return;
+    try{
+      const q=(pIn.value||'').trim().toLowerCase();
+      if(q.length<3) return;
+      const hits=[];
+      for(const c of roster){ const a=allChats[c.id]||[]; for(let i=a.length-1;i>=0&&hits.length<8;i--){ const e=a[i]; if(e&&(e.k==='u'||e.k==='k')&&String(e.t||'').toLowerCase().includes(q)) hits.push({cid:c.id,g:false,e}); } }
+      try{ for(const g of groups){ const a=allChats['g_'+g.id]||[]; for(let i=a.length-1;i>=0&&hits.length<12;i--){ const e=a[i]; if(e&&(e.k==='u'||e.k==='k')&&String(e.t||'').toLowerCase().includes(q)) hits.push({cid:g.id,g:true,e}); } } }catch(e){}
+      if(!hits.length) return;
+      _palGuard=true;
+      hits.forEach(h=>{
+        const b=document.createElement('button');
+        const nm=h.g?((window.__groups?window.__groups():[]).find(g=>g.id===h.cid)||{name:'group'}).name:(roster.find(c=>c.id===h.cid)||{}).name;
+        b.innerHTML='<span class="ico">💬</span> '+esc(nm||'')+': '+esc(String(h.e.t||'').slice(0,60));
+        b.onclick=async()=>{ try{ document.getElementById('palette').classList.remove('on'); if(h.g) await enterGroup(h.cid); else await enterChat(h.cid); setTimeout(()=>jumpTo(h.e.id),600); }catch(e){} };
+        palList.appendChild(b);
+      });
+      _palGuard=false;
+    }catch(e){ _palGuard=false; }
+  }); /* observer disabled 2026-11-23: palette typing wedged the renderer; message search lives in inbox filter now */
+}catch(e){}
+let lastSeen=Date.now();
+try{ deckStore.get('lastSeen').then(t=>{ if(typeof t==='number') lastSeen=t; try{maybeAway();}catch(e){} }); }catch(e){}
+setInterval(()=>{ try{ deckStore.set('lastSeen',Date.now()); }catch(e){} },60000);
+try{ document.addEventListener('visibilitychange',()=>{ try{ if(document.visibilityState==='hidden') deckStore.set('lastSeen',Date.now()); else maybeAway(true); }catch(e){} }); }catch(e){}
+function maybeAway(onReturn){
+  try{
+    const gap=Date.now()-lastSeen;
+    if(gap<2*3600*1000) return;
+    const card=document.getElementById('awayCard'); if(!card||!card.hidden) return;
+    const items=[];
+    for(const k in unread){ if(unread[k]>0) items.push({kind:'chat',key:k,n:unread[k]}); }
+    const newPosts=allFeed.filter(p=>(p.ts||0)>lastSeen);
+    if(newPosts.length) items.push({kind:'feed',n:newPosts.length});
+    let newGroups=[];
+    try{ newGroups=groups.filter(g=>(g.createdAt||0)>lastSeen); }catch(e){}
+    if(!items.length&&!newGroups.length) return;
+    card.innerHTML='<b>💤 While you were away</b>';
+    items.slice(0,5).forEach(it=>{
+      const b=document.createElement('button');
+      if(it.kind==='feed'){ b.textContent='◉ '+it.n+' new network post'+(it.n>1?'s':''); b.onclick=()=>switchTab('network'); }
+      else{
+        let nm=it.key;
+        try{ if(it.key.startsWith('g_')){ const g=groupById(it.key.slice(2)); nm=(g?g.name:'group'); } else { const c=roster.find(c=>c.id===it.key); nm=c?c.name:it.key; } }catch(e){}
+        b.textContent='✦ '+nm+' ('+it.n+' new)';
+        b.onclick=()=>{ try{ if(it.key.startsWith('g_')) enterGroup(it.key.slice(2)); else enterChat(it.key); }catch(e){} };
+      }
+      card.appendChild(b);
+    });
+    newGroups.slice(0,3).forEach(g=>{
+      const b=document.createElement('button'); b.textContent='👥 You were added to “'+g.name+'”';
+      b.onclick=()=>{ try{enterGroup(g.id);}catch(e){} };
+      card.appendChild(b);
+    });
+    const x=document.createElement('button'); x.textContent='dismiss'; x.style.opacity='.6';
+    x.onclick=()=>{ card.hidden=true; card.innerHTML=''; lastSeen=Date.now(); try{deckStore.set('lastSeen',lastSeen);}catch(e){} };
+    card.appendChild(x);
+    card.hidden=false;
+    try{ if(onReturn) toast('while you were away… check the deck'); }catch(e){}
+  }catch(e){}
+}
+window.__maybeAway=maybeAway;
+try{
+  const logEl=document.getElementById('log');
+  let _tsx=0,_tsy=0,_tst=0,_tRow=null,_lpT=null;
+  logEl.addEventListener('touchstart',e=>{
+    try{
+      const t=e.touches[0]; const row=e.target.closest?e.target.closest('.row'):null;
+      _tsx=t.clientX; _tsy=t.clientY; _tst=Date.now(); _tRow=row;
+      clearTimeout(_lpT);
+      if(row) _lpT=setTimeout(()=>{ try{openCtx(row);}catch(_){} _lpT=null; },550);
+    }catch(_){}
+  },{passive:true});
+  logEl.addEventListener('touchmove',e=>{
+    try{
+      const t=e.touches[0];
+      if(Math.abs(t.clientX-_tsx)>10||Math.abs(t.clientY-_tsy)>10) clearTimeout(_lpT);
+    }catch(_){}
+  },{passive:true});
+  logEl.addEventListener('touchend',e=>{
+    try{
+      clearTimeout(_lpT);
+      const t=e.changedTouches[0];
+      const dx=t.clientX-_tsx, dy=t.clientY-_tsy, dt=Date.now()-_tst;
+      if(_tRow&&dx>70&&Math.abs(dy)<40&&dt<500){ setReply(_tRow); }
+    }catch(_){}
+  });
+  logEl.addEventListener('dblclick',e=>{
+    try{
+      const row=e.target.closest?e.target.closest('.row'):null;
+      if(row&&row.dataset.mid) reactEmoji(row.dataset.mid,'❤️');
+    }catch(_){}
+  });
+  logEl.addEventListener('contextmenu',e=>{
+    try{
+      const row=e.target.closest?e.target.closest('.row'):null;
+      if(row){ e.preventDefault(); openCtx(row); }
+    }catch(_){}
+  });
+}catch(e){}
+async function exportBackup(){
+  try{
+    const data={v:2,exportedAt:Date.now(),roster,world,activeId,groups,allChats,allFeed,unread,convTs,lastSeenNet};
+    const blob=new Blob([JSON.stringify(data)],{type:'application/json'});
+    const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+    a.download='goon-deck-backup-'+new Date().toISOString().slice(0,10)+'.json'; a.click();
+    setTimeout(()=>URL.revokeObjectURL(a.href),5000);
+    const st=document.getElementById('dataState'); if(st) st.textContent='backup exported — keep it somewhere safe.';
+  }catch(e){ toast('export failed: '+(e&&e.message?e.message:e)); }
+}
+async function importBackup(file){
+  try{
+    const data=JSON.parse(await file.text());
+    if(!data||!Array.isArray(data.roster)) throw new Error('not a deck backup');
+    roster=data.roster; world=data.world||{lore:'',rules:''}; activeId=data.activeId||roster[0].id;
+    groups=Array.isArray(data.groups)?data.groups:[];
+    allChats=data.allChats||{};
+    allFeed=Array.isArray(data.allFeed)?data.allFeed:[];
+    unread=data.unread||{}; convTs=data.convTs||{}; lastSeenNet=data.lastSeenNet||0;
+    await saveDeck();
+    for(const c of roster){ try{ const st=cStore(c.id); const e=allChats[c.id]; if(e) await st.set('entries',e.slice(-80)); }catch(e){} }
+    for(const g of groups){ try{ await gStore(g.id).set('entries',(allChats['g_'+g.id]||[]).slice(-80)); }catch(e){} }
+    try{ await deckStore.set('unread',unread); await deckStore.set('convTs',convTs); await deckStore.set('feed',allFeed); await deckStore.set('feedSeen',lastSeenNet); }catch(e){}
+    location.reload();
+  }catch(e){ toast('import failed: '+(e&&e.message?e.message:e)); }
+}
+try{
+  document.getElementById('dataExport').onclick=exportBackup;
+async function wipeGame(){ try{ const cids=(typeof roster!=='undefined'?roster.map(c=>c.id):[]); for(const id of cids){ try{ const st=cStore(id); await st.delete('entries'); await st.delete('bg'); await st.delete('facts'); }catch(e){} } try{ const gs=(typeof groups!=='undefined'?groups:[]); for(const g of gs){ try{ await gStore(g.id).delete('entries'); }catch(e){} } }catch(e){} for(const k of ['roster','world','activeId','goonstats','sesslog','groups','activeGroupId','unread','convTs','feed','feedSeen','strict','voice','lastSeen']) try{ await deckStore.delete(k); }catch(e){} }catch(e){} try{ location.reload(); }catch(e){} }
+try{ let _wArmed=false,_wT=null; const wb=document.getElementById('dataWipe'); if(wb) wb.onclick=()=>{ if(!_wArmed){ _wArmed=true; wb.classList.add('armed'); wb.textContent='really wipe everything? tap again'; clearTimeout(_wT); _wT=setTimeout(()=>{ _wArmed=false; wb.classList.remove('armed'); wb.textContent='hard wipe — fresh game'; },4000); return; } clearTimeout(_wT); wb.disabled=true; wb.textContent='wiping…'; wipeGame(); }; }catch(e){}
+  document.getElementById('dataImportBtn').onclick=()=>document.getElementById('dataImportFile').click();
+  document.getElementById('dataImportFile').onchange=e=>{ const f=e.target.files[0]; if(f) importBackup(f); e.target.value=''; };
+  (async()=>{ try{ const est=await navigator.storage.estimate(); const st=document.getElementById('dataState'); if(st&&est) st.textContent='using '+Math.round((est.usage||0)/1048576)+' MB on this device.'; }catch(e){} })();
+}catch(e){}
+/* ==== Claude batch 1: scroll guard, title badge, persist, backup, back-layers (quiet-hours gating removed: solo app, toasts always fire) ==== */
+let _newCount=0;
+function atBottom(){ try{ return document.documentElement.scrollHeight-window.scrollY-window.innerHeight<120; }catch(e){ return true; } }
+function showPill(){ try{ const p=document.getElementById('newMsgPill'); if(!p) return; _newCount++; p.hidden=false; p.textContent='↓ '+_newCount+' new'; }catch(e){} }
+const _scrollBottomOrig=scrollBottom;
+scrollBottom=function(){ try{ const p=document.getElementById('newMsgPill'); if(atBottom()){ _newCount=0; if(p) p.hidden=true; _scrollBottomOrig(); } else showPill(); }catch(e){ try{_scrollBottomOrig();}catch(_){} } };
+try{ const _np=document.getElementById('newMsgPill'); if(_np) _np.onclick=()=>{ _newCount=0; _np.hidden=true; try{ window.scrollTo({top:document.documentElement.scrollHeight,behavior:'smooth'}); }catch(e){ window.scrollTo(0,document.documentElement.scrollHeight); } }; }catch(e){}
+window.addEventListener('scroll',()=>{ try{ if(atBottom()){ _newCount=0; const p=document.getElementById('newMsgPill'); if(p) p.hidden=true; } }catch(e){} },{passive:true});
+function updateTitle(){
+  try{
+    let n=0; for(const k in unread) n+=unread[k]||0;
+    const base='Personal Goon Deck';
+    document.title=n>0?'('+n+') '+base:base;
+  }catch(e){}
+}
+try{ const _riT=renderInbox; renderInbox=function(){ const r=_riT(); try{updateTitle();}catch(e){} return r; }; updateTitle(); }catch(e){}
+try{ if(navigator.storage&&navigator.storage.persist) navigator.storage.persist().catch(()=>{}); }catch(e){}
+/* solo app: no quiet hours — toasts and ping cards always fire, everything stays on this device */
+function closeTopLayer(){
+  for(const sel of ['#lightbox','#palette','#charModal','#groupModal','#memberSheet','#meterSheet','#giftSheet','#dateSheet','#eventOverlay','#dossierSheet']){
+    try{ const el=document.querySelector(sel); if(sel==='#eventOverlay'){ if(el){ el.remove(); return true; } continue; } if(el&&el.classList.contains('on')){ el.classList.remove('on'); return true; } }catch(e){}
+  }
+  try{
+    if(document.getElementById('view-chat')&&document.getElementById('view-chat').classList.contains('on')&&!document.getElementById('inboxView').hidden){ return false; }
+    if(!document.getElementById('inboxView').hidden) return false;
+    showInbox(); return true;
+  }catch(e){ return false; }
+}
+window.addEventListener('popstate',()=>{ try{closeTopLayer();}catch(e){} });
+function pushLayer(){ try{ history.pushState({layer:1},''); }catch(e){} }
+try{
+  ['memberSheet','meterSheet','groupModal','charModal','lightbox','palette'].forEach(id=>{
+    const el=document.getElementById(id); if(!el) return;
+    new MutationObserver(()=>{ try{ if(el.classList.contains('on')) pushLayer(); }catch(e){} }).observe(el,{attributes:true,attributeFilter:['class']});
+  });
+}catch(e){}
+
+  })();
+})();
+</script>
+
+<script>
+/* OBSESSION OS — UI extras (additive, wraps engine functions) */
+(function(){
+  const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+  const appEl=document.getElementById('app');
+
+  /* ---- per-girl theme + switcher + presence ---- */
+  function currentGirlId(){ try{ if(window.__isGroup&&window.__isGroup()) return null; }catch(e){} try{ return (typeof activeId!=='undefined')?activeId:null; }catch(e){ return null; } }
+  function paintTheme(){
+    try{
+      const id=currentGirlId();
+      const _c=(typeof roster!=='undefined')?roster.find(x=>x.id===id):null;
+      if(_c && _c.hue==null){ _c.hue=_c.id==='yuki'?18:_c.id==='emi'?350:(_c.id==='kayla'?300:260); try{ if(typeof queueSave==='function') queueSave(); }catch(e){} }
+      if(_c){ appEl.removeAttribute('data-group'); appEl.style.setProperty('--girl-h',_c.hue||300); }
+      else { appEl.setAttribute('data-group',''); appEl.style.setProperty('--girl-h',260); }
+      const sw=$('#girlSwitch');
+      if(sw&&typeof roster!=='undefined'){
+        const ids=roster.map(c=>c.id).join(',');
+        if(sw.dataset.ids!==ids){
+          sw.dataset.ids=ids; sw.innerHTML='';
+          roster.forEach(c=>{
+            const b=document.createElement('button');
+            b.title=c.name; b.dataset.id=c.id;
+            if(c.id===id) b.classList.add('on');
+            const im=document.createElement('img'); im.src=c.pfp||'src/images/kayla-pfp.jpg'; im.alt=c.name;
+            b.appendChild(im);
+            b.onclick=()=>{ try{ enterChat(c.id); }catch(e){} };
+            sw.appendChild(b);
+          });
+        } else {
+          sw.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.id===id));
+        }
+      }
+      const pt=$('#presenceText');
+      if(pt){ try{ const c=(typeof activeChar!=='undefined')?activeChar():null; if(c){ let irl=false, withNm=null; try{ irl=window.agIsIrl?window.agIsIrl(c.id):false; }catch(e){} try{ const w=window.agWith?window.agWith():null; if(w&&w!==c.id){ const r=(typeof roster!=='undefined')?roster.find(x=>x.id===w):null; withNm=r?r.name:null; } }catch(e){} const st=(typeof relStatus==='function'?relStatus(c):'here'); pt.textContent=irl?('You\u2019re with '+c.name+' irl \u2014 '+st):('You\u2019re texting '+c.name+(withNm?(' \u2014 with '+withNm+' irl'):'')+' \u2014 '+st); } else pt.textContent='pick your poison'; }catch(e){} }
+      try{
+        const mb=document.getElementById('meetBtn');
+        if(mb){
+          if(!mb.dataset.w){
+            mb.dataset.w='1';
+            mb.onclick=()=>{
+              try{
+                if(window.__isGroup&&window.__isGroup()){ if(window.toast) window.toast('groups are always together — no meet up needed'); return; }
+                const cur=(typeof activeId!=='undefined')?activeId:null; if(!cur) return;
+                const isIrl=window.agIsIrl?window.agIsIrl(cur):false;
+                if(isIrl){ window.agStepOut(cur); try{syncHeader();}catch(e){} return; }
+                const withId=window.agWith?window.agWith():null;
+                if(withId&&withId!==cur&&!window.agByeClean(withId)){
+                  if(!mb.dataset.armed){ mb.dataset.armed='1'; const wn=(()=>{ try{ const r=roster.find(x=>x.id===withId); return r?r.name:withId; }catch(e){ return withId; } })(); mb.textContent='ditch '+wn+'? tap again'; setTimeout(()=>{ try{ delete mb.dataset.armed; paintTheme(); }catch(e){} },3500); if(window.toast) window.toast('You\u2019re still with '+wn+' — say bye in her chat first, or tap again to cold-dip (she WILL see it)'); return; }
+                  delete mb.dataset.armed;
+                }
+                window.agMeetUp(cur); try{syncHeader();}catch(e){}
+              }catch(e){}
+            };
+          }
+          try{
+            if(window.__isGroup&&window.__isGroup()){ mb.hidden=true; }
+            else{
+              const cur=(typeof activeId!=='undefined')?activeId:null;
+              const isIrl=cur&&window.agIsIrl?window.agIsIrl(cur):false;
+              const withId=window.agWith?window.agWith():null;
+              mb.hidden=false;
+              if(isIrl) mb.textContent='step out';
+              else if(withId&&withId!==cur){ let wn=withId; try{ const r=roster.find(x=>x.id===withId); if(r) wn=r.name; }catch(e){} mb.textContent=mb.dataset.armed?('ditch '+wn+'? tap again'):('meet up (with '+wn+')'); }
+              else mb.textContent='meet up';
+              mb.classList.toggle('on',!!isIrl);
+            }
+          }catch(e){}
+        }
+      }catch(e){}
+      const hs=$('#heroStats');
+      if(hs){ try{ const g=(typeof gstats!=='undefined')?gstats:{edges:0,snaps:0,timeSecs:0}; const n=(typeof roster!=='undefined')?roster.length:0;
+        hs.innerHTML=`<div class="hstat"><b>${n}</b><span>girls</span></div><div class="hstat"><b>${g.snaps||0}</b><span>snaps</span></div>`;
+      }catch(e){} }
+    }catch(e){}
+  }
+  try{
+    const _sh=syncHeader;
+    syncHeader=function(){ const r=_sh(); try{paintTheme();}catch(e){} return r; };
+  }catch(e){}
+  try{
+    const _rd=renderDeck;
+    renderDeck=function(){
+      const r=_rd();
+      try{
+        document.querySelectorAll('#rosterGrid .bitch').forEach(card=>{
+          const nameEl=card.querySelector('.bmeta b');
+          const nm=nameEl?nameEl.textContent:'';
+          const c=(typeof roster!=='undefined')?roster.find(x=>x.name===nm):null;
+          if(c&&!card.querySelector('.snapbadge')){
+            const n=((typeof allChats!=='undefined')&&(allChats[c.id]||[]).filter(e=>e.k==='i').length)||0;
+            const b=document.createElement('div'); b.className='snapbadge'; b.textContent=`◉ ${n} snaps`;
+            card.prepend(b);
+          }
+        });
+        paintTheme();
+      }catch(e){}
+      return r;
+    };
+  }catch(e){}
+  try{
+    const _st=switchTab;
+    switchTab=function(n){ const r=_st(n); try{syncNav(n);}catch(e){} return r; };
+  }catch(e){}
+  function syncNav(n){
+    try{ document.body.dataset.activeView=n; }catch(e){}
+    [['#tabs button'],['#sideNav button'],['#bottomNav button']].forEach(([sel])=>{
+      $$(sel).forEach(b=>{ const on=b.dataset.view===n; b.classList.toggle('on',on); if(on) b.setAttribute('aria-current','page'); else b.removeAttribute('aria-current'); });
+    });
+    try{ document.querySelectorAll('.ico').forEach(el=>el.setAttribute('aria-hidden','true')); }catch(e){}
+  }
+  try{ document.body.dataset.activeView=document.querySelector('#tabs button.on, #bottomNav button.on')?.dataset.view||'deck'; }catch(e){}
+  try{ document.querySelectorAll('.ico').forEach(el=>el.setAttribute('aria-hidden','true')); }catch(e){}
+  $$('#sideNav button').forEach(b=>b.onclick=()=>switchTab(b.dataset.view));
+  $$('#bottomNav button').forEach(b=>b.onclick=()=>switchTab(b.dataset.view));
+  // keep nav in sync when legacy tabsEl handler fires first
+  $$('#tabs button').forEach(b=>b.addEventListener('click',()=>setTimeout(()=>syncNav(b.dataset.view),0)));
+
+  /* heat wrap mirrors sceneRow */
+  try{
+    const _heat=setHeat;
+    setHeat=function(h){ const r=_heat(h); try{ $$('#heatWrap button').forEach(b=>b.classList.toggle('on',+b.dataset.h===+h)); }catch(e){} return r; };
+  }catch(e){}
+  $$('#heatWrap button').forEach(b=>b.onclick=()=>{ try{setHeat(+b.dataset.h);}catch(e){} });
+
+  /* empty-state CTAs */
+  const hi=$('#emptySayHi'); if(hi) hi.onclick=()=>{ switchTab('chat'); setTimeout(()=>{ const i=$('#inp'); if(i) i.focus(); },100); };
+  const es=$('#emptySnap'); if(es) es.onclick=()=>{ switchTab('chat'); setTimeout(()=>{ try{snap();}catch(e){} },100); };
+
+  /* lightbox actions */
+  try{
+    const lw=$('#lightClose'); if(lw) lw.onclick=()=>$('#lightbox').classList.remove('on');
+    const wall=$('#lightWall'); if(wall) wall.onclick=()=>{ try{ const s=$('#lightImg').src; bgSrc=s; bgOn=true; applyBg(); queueSave(); toast('wallpaper set'); }catch(e){} $('#lightbox').classList.remove('on'); };
+    const dl=$('#lightSave'); if(dl) dl.onclick=()=>{ try{ const a=document.createElement('a'); a.href=$('#lightImg').src; a.download='snap.png'; a.click(); }catch(e){} };
+  }catch(e){}
+  window.toast=window.toast||function(t){ try{ const w=$('#toastWrap'); const d=document.createElement('div'); d.className='toast'; d.textContent=t; w.appendChild(d); setTimeout(()=>d.remove(),2600);}catch(e){} };
+
+  /* card tilt (desktop) */
+  if(matchMedia('(pointer:fine)').matches && !matchMedia('(prefers-reduced-motion: reduce)').matches){
+    document.addEventListener('pointermove',e=>{
+      const card=e.target.closest?e.target.closest('.bitch'):null;
+      if(!card) return;
+      const r=card.getBoundingClientRect();
+      const x=(e.clientX-r.left)/r.width-.5, y=(e.clientY-r.top)/r.height-.5;
+      card.style.transform=`translateY(-3px) rotateX(${(-y*5).toFixed(2)}deg) rotateY(${(x*6).toFixed(2)}deg)`;
+    });
+    document.addEventListener('pointerout',e=>{
+      const card=e.target.closest?e.target.closest('.bitch'):null;
+      if(card) card.style.transform='';
+    });
+  }
+
+  /* ---- command palette ---- */
+  const pal=$('#palette'), pIn=$('#paletteInput'), pList=$('#paletteList');
+  let palSel=0, palItems=[];
+  function actions(){
+    const out=[];
+    const views=[['deck','Go to deck','▦'],['chat','Go to chat','✦'],['gallery','Go to gallery','▣'],['shrine','Go to shrine','✧']];
+    views.forEach(([v,d,i])=>out.push({t:d,hint:v,fn:()=>switchTab(v),ico:i}));
+    try{ (roster||[]).forEach((c,i)=>out.push({t:'Chat with '+c.name,hint:(i+1)+'',fn:()=>enterChat(c.id),ico:'✦'})); }catch(e){}
+    out.push({t:'Snap the scene',hint:'S',fn:()=>{switchTab('chat');snap();},ico:'▣'});
+    out.push({t:'Toggle strict vision check',hint:'',fn:()=>strictBtn.click(),ico:'◎'});
+    out.push({t:'Toggle voice',hint:'',fn:()=>voiceBtn.click(),ico:'♪'});
+    out.push({t:'Set wallpaper from last snap',hint:'',fn:()=>bgBtn.click(),ico:'▦'});
+    out.push({t:'Fresh chat (with confirm)',hint:'',fn:()=>newBtn.click(),ico:'＋'});
+    return out;
+  }
+  function renderPal(){
+    const q=(pIn.value||'').toLowerCase().trim();
+    palItems=actions().filter(a=>!q||a.t.toLowerCase().includes(q));
+    palSel=Math.min(palSel,Math.max(0,palItems.length-1));
+    pList.innerHTML='';
+    palItems.forEach((a,i)=>{
+      const b=document.createElement('button');
+      b.innerHTML=`<span>${a.ico||'·'}</span><span></span><small></small>`;
+      b.querySelector('span:nth-child(2)').textContent=a.t;
+      b.querySelector('small').textContent=a.hint||'';
+      if(i===palSel) b.classList.add('sel');
+      b.onclick=()=>{ closePal(); a.fn(); };
+      pList.appendChild(b);
+    });
+    if(!palItems.length) pList.innerHTML='<div style="padding:var(--s-3);color:var(--text-3);font-size:var(--fs-sm)">No match.</div>';
+  }
+  function openPal(){ pal.classList.add('on'); pIn.value=''; palSel=0; renderPal(); setTimeout(()=>pIn.focus(),30); }
+  function closePal(){ pal.classList.remove('on'); }
+  window.__palette=openPal;
+  document.addEventListener('keydown',e=>{
+    const inField=/INPUT|TEXTAREA|SELECT/.test((document.activeElement||{}).tagName||'');
+    if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){ e.preventDefault(); pal.classList.contains('on')?closePal():openPal(); return; }
+    if(pal.classList.contains('on')){
+      if(e.key==='Escape') closePal();
+      else if(e.key==='ArrowDown'){ e.preventDefault(); palSel=Math.min(palSel+1,palItems.length-1); renderPal(); }
+      else if(e.key==='ArrowUp'){ e.preventDefault(); palSel=Math.max(palSel-1,0); renderPal(); }
+      else if(e.key==='Enter'){ e.preventDefault(); const a=palItems[palSel]; if(a){ closePal(); a.fn(); } }
+      return;
+    }
+    if(inField) {
+      if(e.key==='Escape') document.activeElement.blur();
+      return;
+    }
+    if(e.key==='1'||e.key==='2'||e.key==='3'){ try{ const c=roster[+e.key-1]; if(c) enterChat(c.id); }catch(err){} }
+    else if(e.key.toLowerCase()==='s'){ switchTab('chat'); try{snap();}catch(err){} }
+  });
+  if(pIn){ pIn.addEventListener('input',()=>{ palSel=0; renderPal(); }); }
+  if(pal) pal.addEventListener('click',e=>{ if(e.target===pal) closePal(); });
+
+  /* composer: Enter sends, Shift+Enter newline */
+  try{
+    const ta=$('#inp');
+    if(ta&&!ta.dataset.uxBound){
+      ta.dataset.uxBound='1';
+      ta.addEventListener('keydown',e=>{
+        if(e.key==='Enter'&&!e.shiftKey&&!e.metaKey&&!e.ctrlKey){ e.preventDefault(); try{ send(); }catch(err){} }
+      });
+    }
+  }catch(e){}
+
+  /* boot paint */
+  setTimeout(paintTheme,800);
+  setTimeout(paintTheme,2500);
+  try{
+    const hn=document.getElementById('headName');
+    if(hn&&window.MutationObserver){
+      new MutationObserver(()=>{ try{paintTheme();}catch(e){} }).observe(hn,{childList:true,characterData:true,subtree:true});
+    }
+  }catch(e){}
+})();
+
+</script>
+<script>
+(() => {
+'use strict';
+const LS='agh.ctx.v1';
+const load=()=>{try{return JSON.parse(localStorage.getItem(LS))||null}catch{return null}};
+const AG = window.AG = load() || {ctx:{mode:'text',place:'',busyUntil:0,with:null,bye:{}},girls:{}};
+if(!AG.ctx) AG.ctx={mode:'text',place:'',busyUntil:0,with:null,bye:{}};
+if(!('with' in AG.ctx)) AG.ctx.with=null;
+if(!AG.ctx.bye||typeof AG.ctx.bye!=='object') AG.ctx.bye={};
+const save=()=>{try{localStorage.setItem(LS,JSON.stringify(AG))}catch{}};
+const G=id=>AG.girls[id]||(AG.girls[id]={met:false,knows:[]});
+const now=()=>Date.now();
+const PLACES=[
+ [/\b(work|working|office|shift|at work)\b/i,'work',4*36e5],
+ [/\b(gym|workout|working out)\b/i,'the gym',90*6e4],
+ [/\b(class|lecture|school|uni|lesson)\b/i,'class',2*36e5],
+ [/\b(shower|bath|bathing)\b/i,'the shower',20*6e4],
+ [/\b(driving|commuting|on the train|on the bus|on my way)\b/i,'the commute',45*6e4],
+ [/\bbed\b/i,'bed',8*36e5],
+ [/\b(eating|dinner|lunch|breakfast|food)\b/i,'food',45*6e4]];
+// goodbye = clean exit from irl. saying this in HER chat steps you out, no drama.
+const BYE_RE=/\b(gotta go|gotta run|gotta head|have to go|has to go|need to go|going to work|at work|on my way|headed out|heading out|see you|see ya|later|brb|gtg|bye|good ?night|goodbye|i'?ll text you|text you later|talk later)\b/i;
+const COMEOVER_RE=/\b(come over|come through|come thru|pull up|in person|with you here|meet up|link up)\b/i;
+window.agIsIrl=function(id){ try{ return !!(AG.ctx.with&&id&&AG.ctx.with===id); }catch(e){ return false; } };
+window.agWith=function(){ try{ return AG.ctx.with||null; }catch(e){ return null; } };
+window.agByeClean=function(id){ try{ const t=AG.ctx.bye?AG.ctx.bye[id]:0; return !!(t&&Date.now()-t<30*60*1000); }catch(e){ return false; } };
+function girlName(id){ try{ const r=(typeof roster!=='undefined'?roster.find(x=>x.id===id):null); return (r&&r.name)||id; }catch(e){ return id; } }
+function dipNote(oldId,newId){
+  const on=girlName(oldId), nn=girlName(newId);
+  if(oldId==='kayla') return `lowk saw u run off to ${nn} w no bye?? k. whatever. have fun w her then`;
+  if(oldId==='yuki') return `Oh. Running off to ${nn} without a word, darling? That's a shame.`;
+  if(oldId==='mimi') return `mrrp… u just left?? ears flat. not cool… have fun w ${nn} then…`;
+  if(oldId==='emi') return `*pouty, arms crossed* oh so u just DIP like that?? to go see ${nn}?? rude!! u better text me back!!`;

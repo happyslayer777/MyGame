@@ -1,0 +1,500 @@
+    d.querySelector('span').textContent=String(text).slice(0,90);
+    d.onclick=()=>{ try{d.remove();}catch(e){} try{enterChat(c.id);}catch(e){} };
+    w.appendChild(d);
+    setTimeout(()=>{ try{d.remove();}catch(e){} },9000);
+  }catch(e){}
+}
+async function pingTick(){
+  try{
+    if(document.visibilityState!=='visible'&&Date.now()-lastActivity>90000) return 'hidden';
+    if(Date.now()-lastActivity>5*60*1000) return 'idle';
+    const force=window.__pingForce===true; window.__pingForce=false;
+    if(!force){
+      if(window.__devMode) return 'dev';
+      if(Date.now()-(window.__lastPing||0)<90000) return 'cooldown';
+      if(Date.now()-(window.__lastAmbient||0)<600000) return 'ambient-cool';
+      if(sendBtn.disabled||snapBtn.disabled) return 'busy';
+    }
+    if(typeof roster==='undefined'||!roster.length) return 'empty';
+    if(!window.__lastPingBy) window.__lastPingBy={};
+    const __now=Date.now();
+    let pool=roster.filter(c=>c&&c.met!==false&&!c.muted&&c.id!==activeId&&!(c.sulkUntil&&Date.now()<c.sulkUntil)&&(c.interest||0)>=25&&bondNum(c)>=2&&((typeof unread!=='undefined'&&unread?unread[c.id]:0)||0)<3&&__now-((window.__lastPingBy||{})[c.id]||0)>30*60*1000);
+    if(isGroupMode()){ const gg=groupById(activeGroupId); const ids=gg?(gg.memberIds||[]):[]; pool=pool.filter(c=>!ids.includes(c.id)); }
+    if(!pool.length) return 'nobody';
+    if(!force&&Math.random()>0.3) return 'skip';
+    pool.sort((a,b)=>((b.interest||0)+Math.random()*50)-((a.interest||0)+Math.random()*50));
+    const c=pool[0];
+    window.__lastPing=Date.now(); window.__lastPingBy[c.id]=Date.now(); lastActivity=Date.now(); try{window.__lastAmbient=Date.now();}catch(e){}
+    try{}catch(e){}
+    let withWho='nobody';
+    try{ if(isGroupMode()){ const gg=groupById(activeGroupId); withWho='the group ('+membersOf(gg).map(m=>m.name).join(', ')+')'; } else { const a=activeChar(); withWho=a?a.name:'nobody'; } }catch(e){}
+    const __I=Math.round(c.interest||0), __U=Math.round(c.lust||0);
+    let __dir;
+    if(__I<40) __dir='Short chaste check-in (under 30 words, texting style): your own life, something real you did today, a little distant — make HIM chase. HARD RULES: no flirting with your body, no bath/bed/undressing talk, no invitations, nothing sexual. You barely know him; act like it.';
+    else if(__I<60) __dir='Short flirty check-in (under 35 words, texting style): sweet, a little forward, but NOTHING explicit and no taking clothes off — tease with words, never with your body.';
+    else __dir='Text him something short (under 40 words, texting style) — sweet check-in, own life, miss him'+(__U>=70&&(typeof bondNum==='function'?bondNum(c):1)>=4?', or a lewd tease since you are genuinely that far gone':'')+'.';
+    const raw=await aiText('You are '+c.name+' ('+(c.tagline||'')+'). Your man is currently with '+withWho+' (you are NOT there). Your real memories: '+(((c.mem||[]).slice(-3).join(' / '))||'none')+'. '+__dir+' '+soulBrief(c)+' His name is Preston, call him by it sometimes. Only mention another girl with proof, never invent jealousy from nothing. Present tense ok, *actions* ok. Only the text, no quotes. Never speak for him.');
+    const text=String(raw).slice(0,300);
+    try{
+      const st=cStore(c.id);
+      const arr=(await st.get('entries'))||[];
+      arr.push({k:'k',t:text,id:(typeof newMid==='function'?newMid():'m'+Date.now()),ts:Date.now()});
+      const slim=arr.slice(-80);
+      await st.set('entries',slim);
+      allChats[c.id]=slim;
+      unread[c.id]=(unread[c.id]||0)+1; saveUnread();
+      try{ if(typeof soulJournal==='function') soulJournal(c,'Texted him out of nowhere: '+text.slice(0,120)); }catch(e){}
+      try{renderDeck();}catch(e){} try{paintDots();}catch(e){}
+      pingToast(c,text);
+      return 'ping:'+c.id;
+    }catch(e){ return 'store-err'; }
+  }catch(e){ return 'err'; }
+}
+setInterval(pingTick,45000);
+/* ==== network feed: public posts, likes, comments, shares ==== */
+let allFeed=[], lastSeenNet=0;
+try{ deckStore.get('feedSeen').then(t=>{ if(typeof t==='number') lastSeenNet=t; try{paintNetBadge();}catch(e){} }); }catch(e){}
+try{ deckStore.get('feed').then(f=>{ if(Array.isArray(f)){ allFeed=f.filter(p=>p&&p.id); try{renderFeed();}catch(e){} try{paintNetBadge();}catch(e){} } }); }catch(e){}
+try{ views.network=document.getElementById('view-network'); }catch(e){}
+function saveFeed(){ try{ if(allFeed.length>60) allFeed=allFeed.slice(-60); deckStore.set('feed',allFeed); }catch(e){} }
+function paintNetBadge(){
+  try{
+    const n=allFeed.filter(p=>p&&(p.ts||0)>lastSeenNet).length;
+    document.querySelectorAll('button[data-view="network"]').forEach(b=>{
+      let d=b.querySelector('.ndot');
+      if(n>0){ if(!d){ d=document.createElement('span'); d.className='ndot'; b.appendChild(d); } d.textContent=n>9?'9+':n; }
+      else if(d) d.remove();
+    });
+  }catch(e){}
+}
+function himAvaHtml(sz){ return '<span class="himava">👑</span>'; }
+function feedAuthor(m){
+  if(!m) return {ava:'src/images/kayla-pfp.jpg',name:'Her'};
+  return {ava:m.pfp||'src/images/kayla-pfp.jpg',name:m.name};
+}
+function renderFeed(){
+  const list=document.getElementById('feedList'); if(!list) return;
+  const empty=document.getElementById('feedEmpty'); if(empty) empty.hidden=allFeed.length>0;
+  list.innerHTML='';
+  const posts=[...allFeed].sort((a,b)=>(b.ts||0)-(a.ts||0));
+  for(const p of posts){
+    const d=document.createElement('div'); d.className='post'; d.dataset.pid=p.id;
+    const isHim=p.who==='him';
+    const m=isHim?null:roster.find(c=>c.id===p.who);
+    const nm=isHim?'You 👑':((m&&m.name)||'Her');
+    const sub=isHim?'Preston':((m&&m.tagline)||'');
+    const ava=isHim?himAvaHtml():'<img src="'+esc((m&&m.pfp)||'src/images/kayla-pfp.jpg')+'">';
+    const tstr=p.ts?new Date(p.ts).toLocaleString([],{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}):'';
+    d.innerHTML='<div class="phead">'+ava+'<div><b></b><span></span></div></div><div class="ptext"></div>';
+    d.querySelector('b').textContent=nm+(tstr?' · '+tstr:'');
+    d.querySelector('.phead span').textContent=sub;
+    d.querySelector('.ptext').textContent=p.text||'';
+    if(p.img){ const im=document.createElement('img'); im.className='pimg'; im.src=p.img; im.onclick=()=>openLight(p.img); d.appendChild(im); }
+    const act=document.createElement('div'); act.className='pact';
+    const liked=(p.likes||[]).includes('him');
+    act.innerHTML='<button data-a="like">❤ '+(p.likes||[]).length+'</button><button data-a="cmt">💬 '+((p.comments||[]).length)+'</button>'+(p.img?'<button data-a="sv">'+(p.sv?'▣ saved ✓':'▣ save')+'</button>':'')+(isHim?'':'<button data-a="dm">✦ DM her</button>');
+    const likeBtn=act.querySelector('[data-a="like"]');
+    if(liked) likeBtn.classList.add('liked');
+    likeBtn.onclick=()=>toggleLike(p.id);
+    act.querySelector('[data-a="cmt"]').onclick=()=>{ const inp=d.querySelector('.pcommentbox input'); if(inp) inp.focus(); };
+    const dmBtn=act.querySelector('[data-a="dm"]');
+    if(dmBtn) dmBtn.onclick=()=>{ try{enterChat(p.who);}catch(e){} };
+    const svBtn=act.querySelector('[data-a="sv"]');
+    if(svBtn) svBtn.onclick=()=>{ try{ if(p.sv) delete p.sv; else p.sv=1; }catch(e){} try{ touchFeed(); }catch(e){} try{ refreshGallery(); }catch(e){} try{ if(window.toast) window.toast(p.sv?'saved to gallery ▣':'removed from gallery'); }catch(e){} };
+    d.appendChild(act);
+    const cc=document.createElement('div'); cc.className='pcomments';
+    (p.comments||[]).slice(-8).forEach(cm=>{
+      const cmHim=cm.who==='him';
+      const cmM=cmHim?null:roster.find(c=>c.id===cm.who);
+      const row=document.createElement('div'); row.className='pcomment';
+      row.innerHTML=(cmHim?himAvaHtml():'<img src="'+esc((cmM&&cmM.pfp)||'src/images/kayla-pfp.jpg')+'">')+'<div class="cbub"><b></b><span></span></div>';
+      row.querySelector('b').textContent=cmHim?'You':((cmM&&cmM.name)||'Her');
+      row.querySelector('.cbub span').textContent=cm.text||'';
+      cc.appendChild(row);
+    });
+    const box=document.createElement('div'); box.className='pcommentbox';
+    box.innerHTML='<input placeholder="Comment as yourself…"><button>send</button>';
+    const inp=box.querySelector('input');
+    const sendCm=()=>{ const t=inp.value.trim(); if(!t) return; inp.value=''; userComment(p.id,t); };
+    box.querySelector('button').onclick=sendCm;
+    inp.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); sendCm(); } });
+    cc.appendChild(box);
+    d.appendChild(cc);
+    list.appendChild(d);
+  }
+}
+window.__renderFeed=renderFeed;
+try{ window.__feed=()=>allFeed; window.__feedPush=(p)=>{ allFeed.push(p); touchFeed(); }; window.__like=toggleLike; window.__comment=userComment; window.__share=shareSnap; }catch(e){}
+try{ window.__attachShare=attachShare; window.__seedMeters=seedMetersFor; window.__touchFeed=touchFeed; window.__renderInbox2=renderInbox; window.__entry=findEntry; window.__bond=bondLevel; }catch(e){}
+function touchFeed(){ saveFeed(); try{renderFeed();}catch(e){} try{paintNetBadge();}catch(e){} }
+function toggleLike(pid){
+  const p=allFeed.find(x=>x.id===pid); if(!p) return;
+  p.likes=p.likes||[];
+  const i=p.likes.indexOf('him');
+  if(i>=0) p.likes.splice(i,1);
+  else { p.likes.push('him'); try{ if(p.who!=='him') bumpMeters(p.who,{love:.4}); }catch(e){} }
+  touchFeed();
+}
+async function girlCommentOn(pid,mid,hint){
+  try{
+    const p=allFeed.find(x=>x.id===pid); if(!p) return;
+    const m=roster.find(c=>c.id===mid); if(!m||m.muted||m.met===false) return;
+    const others=roster.filter(c=>c.id!==mid).map(c=>c.name).join(', ');
+    const __cb=(typeof bondNum==='function'?bondNum(m):1);
+    const sys='You are '+m.name+' ('+(m.tagline||'')+', voice: '+(m.personality||'').slice(0,300)+'). You are replying IN THE PUBLIC NETWORK FEED where everyone (him + the other girls: '+others+') can see. '+(hint||'React shortly.')+' Keep it under 30 words, texting style, present tense ok, *actions* ok. Only the comment, no quotes. Never speak for him or other girls. His name is Preston (use it sometimes). Feelings: love '+Math.round(m.love||30)+'/100, lust '+Math.round(m.lust||30)+'/100. Bond '+__cb+'/10 conduct rule (hard, never state the number): bond 0-1: chaste only — no sexual talk, no filthy threats, you barely know Preston, act distant; bond 2-3: flirty words only, nothing explicit, never promise anything physical; bond 4-5: suggestive but no explicit detail; bond 6+: no limits, as thirsty as you feel.';
+    const out=await aiText(sys);
+    const p2=allFeed.find(x=>x.id===pid); if(!p2) return;
+    p2.comments=p2.comments||[];
+    p2.comments.push({who:mid,text:String(out).slice(0,240),ts:Date.now()});
+    touchFeed();
+  }catch(e){}
+}
+async function userComment(pid,text){
+  try{
+    const p=allFeed.find(x=>x.id===pid); if(!p) return;
+    p.comments=p.comments||[];
+    p.comments.push({who:'him',text:String(text).slice(0,240),ts:Date.now()});
+    touchFeed();
+    const pool=roster.filter(c=>!c.muted&&c.id!==p.who);
+    const ms=p.who==='him'?pool:(roster.find(c=>c.id===p.who)&&!roster.find(c=>c.id===p.who).muted?[roster.find(c=>c.id===p.who)]:pool);
+    if(!ms.length) return;
+    ms.sort((a,b)=>(b.interest||0)-(a.interest||0));
+    const m=ms[0];
+    await girlCommentOn(pid,m.id,'He just commented on this post: "'+String(text).slice(0,120)+'". Reply to HIM directly — flirty, jealous if a rival is involved, thirsty if your lust is high.');
+  }catch(e){}
+}
+async function shareSnap(src,gid){
+  try{
+    const m=roster.find(c=>c.id===gid);
+    const post={id:'p'+Date.now().toString(36),who:'him',text:'look what '+(m?m.name:'she')+' sent me 👀',img:src,ts:Date.now(),likes:[],comments:[]};
+    allFeed.push(post); touchFeed(); switchTab('network');
+    try{ toast('shared to the network'); }catch(e){}
+    if(m&&!m.muted){
+      await girlCommentOn(post.id,m.id,'He just shared YOUR private snap to the whole public network. React as you — proud/flexing if love is high, mad/possessive ("delete that!") if jealous, bratty either way.');
+      if(Math.random()<0.6){
+        const rivals=roster.filter(c=>c.id!==gid&&!c.muted);
+        if(rivals.length){
+          rivals.sort((a,b)=>((b.love||0)+(b.lust||0))-((a.love||0)+(a.lust||0)));
+          await girlCommentOn(post.id,rivals[0].id,'He just posted another girl\'s private snap ('+m.name+') publicly. You are jealous and NOT hiding it — call her out, demand yours gets posted too, or threaten to send something filthier.');
+        }
+      }
+    }
+  }catch(e){}
+}
+function attachShare(row,src,gid){
+  try{
+    if(!row||!src||!gid) return;
+    if(row.querySelector('.shareBtn')) return;
+    const b=document.createElement('button');
+    b.className='shareBtn'; b.textContent='📤 share to network'; b.title='Post this snap to the public network feed as you';
+    b.onclick=()=>shareSnap(src,gid);
+    const bub=row.querySelector('.bubble'); if(bub) bub.appendChild(b);
+  }catch(e){}
+}
+try{
+  document.querySelectorAll('button[data-view="network"]').forEach(b=>{
+    b.addEventListener('click',()=>{ try{ lastSeenNet=Date.now(); deckStore.set('feedSeen',lastSeenNet); setTimeout(()=>paintNetBadge(),50); }catch(e){} });
+  });
+}catch(e){}
+try{
+  const fp=document.getElementById('feedPost');
+  if(fp) fp.onclick=async()=>{
+    const inp=document.getElementById('feedInput');
+    const t=(inp.value||'').trim(); if(!t) return; inp.value='';
+    const post={id:'p'+Date.now().toString(36),who:'him',text:t.slice(0,300),ts:Date.now(),likes:[],comments:[]};
+    allFeed.push(post); touchFeed();
+    try{
+      const pool=roster.filter(c=>!c.muted);
+      pool.sort((a,b)=>(b.interest||0)-(a.interest||0));
+      const first=pool.slice(0,2);
+      for(const m of first){ await girlCommentOn(post.id,m.id,'He just posted publicly: "'+t.slice(0,120)+'". Reply as you — thirsty if you want him, jealous if a rival already replied, bratty always.'); }
+    }catch(e){}
+  };
+}catch(e){}
+/* ==== messages inbox + group identity fixes ==== */
+let convTs={};
+try{ deckStore.get('convTs').then(t=>{ if(t&&typeof t==='object'){ convTs=t; try{renderInbox();}catch(e){} } }); }catch(e){}
+function touchConv(key){ try{ convTs[key]=Date.now(); deckStore.set('convTs',convTs); }catch(e){} try{renderInbox();}catch(e){} }
+try{ window.__touchConv=touchConv; }catch(e){}
+const _qsInbox=queueSave;
+queueSave=function(){ try{ if(isGroupMode()&&activeGroupId) convTs['g_'+activeGroupId]=Date.now(); else if(typeof activeId!=='undefined'&&activeId) convTs[activeId]=Date.now(); }catch(e){} try{ deckStore.set('convTs',convTs); }catch(e){} try{renderInbox();}catch(e){} return _qsInbox(); };
+const _ptInbox=pingToast;
+pingToast=function(c,text){ try{ touchConv(c.id); }catch(e){} return _ptInbox(c,text); };
+function addTypingBubbleAs(m,label){
+  hideEmpty();
+  const row=document.createElement('div'); row.className='row her';
+  const ava=(m&&m.pfp)||'src/images/kayla-pfp.jpg';
+  row.innerHTML='<img class="mini"><div class="bubble"><b class="name"></b><span class="typing"><span class="tdot"></span><span class="tdot"></span><span class="tdot"></span></span></div>';
+  row.querySelector('.mini').src=ava;
+  row.querySelector('.name').textContent=label||(m?m.name:'Her');
+  log.appendChild(row); scrollBottom();
+  try{ if(m&&isGroupMode()){ const g=groupById(activeGroupId); const ms=membersOf(g); const i=ms.findIndex(x=>x.id===m.id); if(i>=0) row.classList.add('g'+(i%4)); } }catch(e){}
+  return row;
+}
+const _addTyping=addTypingBubble;
+addTypingBubble=function(label){ try{ if(isGroupMode()){ const g=groupById(activeGroupId); const ms=membersOf(g); const m=ms.find(x=>label&&label.indexOf(x.name)===0); if(m) return addTypingBubbleAs(m,label); } }catch(e){} return _addTyping(label); };
+const _addImgSolo=addImageBubble;
+addImageBubble=function(src,meta){
+  try{
+    if(isGroupMode()){
+      const g=groupById(activeGroupId); const ms=membersOf(g);
+      let m=null;
+      if(window.__forceMember) m=window.__forceMember;
+      else if(meta&&meta.who) m=roster.find(c=>c.id===meta.who)||ms[0];
+      else m=ms[0];
+      if(m){
+        hideEmpty();
+        const row=document.createElement('div'); row.className='row her';
+        row.innerHTML='<img class="mini"><div class="bubble"><b class="name"></b><img class="snap"><button class="saveBtn">save</button></div>';
+        row.querySelector('.mini').src=m.pfp||'src/images/kayla-pfp.jpg';
+        row.querySelector('.name').textContent=m.name;
+        const im=row.querySelector('.snap'); im.src=src; if(meta&&meta.seed) im.title='seed '+meta.seed;
+        log.appendChild(row); scrollBottom();
+        try{ const gi=ms.findIndex(x=>x.id===m.id); if(gi>=0) row.classList.add('g'+(gi%4)); }catch(e){}
+        wireFixRow(row,meta);
+        try{ if(typeof wireSaveBtn==='function') wireSaveBtn(row); }catch(e){}
+        if(!restoring){ const entry={k:'i',s:src,who:m.id,id:newMid(),ts:Date.now(),r:activeReply?activeReply.mid:null}; if(meta&&meta.prompt){ entry.p=meta.prompt; entry.n=meta.neg; entry.r=meta.res; entry.w=meta.seed; } savedEntries.push(entry); trimSaved(); queueSave(); allChats['g_'+activeGroupId]=savedEntries; try{row.dataset.mid=entry.id;row.dataset.who=m.id;row.dataset.name=m.name;row.dataset.text='📸 snap';}catch(e){} gstats.snaps++; saveGoon(); refreshGallery(); }
+        try{ attachShare(row,src,m.id); }catch(e){}
+        return row;
+      }
+    }
+  }catch(e){}
+  try{
+    const row=_addImgSolo(src,meta);
+    try{ if(!isGroupMode()&&typeof activeId!=='undefined') attachShare(row,src,activeId); }catch(e){}
+    return row;
+  }catch(e){ return _addImgSolo(src,meta); }
+};
+function convPreview(key){
+  const arr=allChats[key]||[];
+  for(let i=arr.length-1;i>=0;i--){ const e=arr[i];
+    if(e.k==='u') return {prev:'You: '+String(e.t||'').slice(0,64),ts:convTs[key]||0};
+    if(e.k==='k'){ const m=e.who?roster.find(c=>c.id===e.who):null; const nm=m?m.name:'Her'; return {prev:nm+': '+String(e.t||'').slice(0,64),ts:convTs[key]||0}; }
+    if(e.k==='i'){ const m=e.who?roster.find(c=>c.id===e.who):null; return {prev:(m?m.name+': ':'')+'📸 snap',ts:convTs[key]||0}; }
+  }
+  return {prev:'no chat yet',ts:convTs[key]||0};
+}
+function relTs(ts){ if(!ts) return ''; const d=Date.now()-ts; if(d<60000) return 'now'; if(d<3600000) return Math.floor(d/60000)+'m'; if(d<86400000) return Math.floor(d/3600000)+'h'; return Math.floor(d/86400000)+'d'; }
+function renderInbox(){
+  const list=document.getElementById('inboxList'); if(!list) return;
+  list.innerHTML='';
+  const items=[];
+  try{
+    for(const c of roster){ const key=c.id; const pv=convPreview(key); items.push({kind:'solo',id:c.id,key,name:c.name,heat:heatEmoji(c),heatT:heatWord(c),sub:(c.muted?'🔕 ':'')+((typeof relStatus==='function')?relStatus(c):'')+' • '+(c.tagline||'')+' · '+bondHeartsFor(c),ava:c.pfp,prev:pv.prev,ts:pv.ts,unreadN:unread[key]||0}); }
+    for(const g of groups){ const key='g_'+g.id; const pv=convPreview(key); const ms=membersOf(g); items.push({kind:'group',id:g.id,key,name:g.name,sub:(ms.map(m=>m.name).join(' · ')||'empty')+' · '+bondHearts(ms.reduce((s,m)=>s+bondNum(m),0)/Math.max(1,ms.length)),ms,prev:pv.prev,ts:pv.ts,unreadN:unread[key]||0}); }
+  }catch(e){}
+  items.sort((a,b)=>(b.ts||0)-(a.ts||0));
+  if(!items.length){ list.innerHTML='<div style="color:var(--text-3);font-size:var(--fs-sm);padding:var(--s-4);text-align:center">No chats yet — say hi to a girl first.</div>'; return; }
+  for(const it of items){
+    const b=document.createElement('button');
+    const active=(it.kind==='group')?(isGroupMode()&&activeGroupId===it.id):(!isGroupMode()&&typeof activeId!=='undefined'&&activeId===it.id);
+    b.className='conv'+(active?' active':'');
+    const avaHtml=it.kind==='solo'
+      ?'<span class="conva"><img src="'+esc(it.ava||'src/images/kayla-pfp.jpg')+'"></span>'
+      :'<span class="conva stack">'+(it.ms||[]).slice(0,3).map(m=>'<img src="'+esc(m.pfp||'src/images/kayla-pfp.jpg')+'">').join('')+'</span>';
+    b.innerHTML=avaHtml+'<span class="convmeta"><b>'+esc(it.name)+(it.heat?'<span class="heate" title="'+esc(it.heatT||'heat')+'">'+it.heat+'</span>':'')+'<span class="mtime">'+esc(relTs(it.ts))+'</span></b><span class="prev">'+esc(it.prev)+'</span><span class="sub">'+esc(it.sub||'')+'</span></span>'+(it.unreadN?'<span class="unreadbadge">💬 '+it.unreadN+'</span>':'')+((it.kind==='solo'&&(roster.find(c=>c.id===it.id)||{}).muted)?'<span class="mutetag">🔕</span>':'');
+    b.onclick=()=>{ if(it.kind==='solo'){ try{enterChat(it.id);}catch(e){} } else { try{enterGroup(it.id);}catch(e){} } };
+    try{ b.dataset.ckey=it.key; }catch(e){}
+    list.appendChild(b);
+  }
+}
+window.__renderInbox=renderInbox;
+function showInbox(){
+  const iv=document.getElementById('inboxView'); if(iv) iv.hidden=false;
+  for(const id of ['presenceBar','log','groupSnapRow','composerStick']){ const el=document.getElementById(id); if(el) el.hidden=true; }
+  const bb=document.getElementById('backBtn'); if(bb) bb.hidden=true;
+  try{ renderInbox(); }catch(e){}
+  try{ if(document.getElementById('view-chat')&&document.getElementById('view-chat').classList.contains('on')) window.scrollTo(0,0); }catch(e){}
+}
+function showThread(){
+  const iv=document.getElementById('inboxView'); if(iv) iv.hidden=true;
+  for(const id of ['presenceBar','log','groupSnapRow']){ const el=document.getElementById(id); if(el) el.hidden=false; }
+  const cs=document.getElementById('composerStick'); if(cs) cs.hidden=false;
+  const bb=document.getElementById('backBtn'); if(bb) bb.hidden=false;
+  try{ syncHeader(); }catch(e){}
+  try{ renderInbox(); }catch(e){}
+  try{ window.__justOpened=Date.now(); }catch(e){}
+  try{ window.scrollTo(0,document.documentElement.scrollHeight); }catch(e){}
+  try{ requestAnimationFrame(()=>{ try{ window.scrollTo(0,document.documentElement.scrollHeight); }catch(e){} }); }catch(e){}
+  try{ setTimeout(()=>{ try{ window.scrollTo(0,document.documentElement.scrollHeight); }catch(e){} },200); setTimeout(()=>{ try{ window.scrollTo(0,document.documentElement.scrollHeight); }catch(e){} },700); }catch(e){}
+}
+window.__showInbox=showInbox; window.__showThread=showThread;
+try{ const bb0=document.getElementById('backBtn'); if(bb0) bb0.onclick=()=>showInbox(); }catch(e){}
+try{ const ng=document.getElementById('inboxNewGroup'); if(ng) ng.onclick=()=>{ try{ if(window.__openGroupModal) window.__openGroupModal(null); }catch(e){} }; }catch(e){}
+try{ const nc=document.getElementById('inboxNewChat'); if(nc) nc.onclick=()=>{ try{ openModal(null); }catch(e){} }; }catch(e){}
+try{
+  document.querySelectorAll('#tabs button[data-view="chat"],#sideNav button[data-view="chat"],#bottomNav button[data-view="chat"]').forEach(b=>{
+    b.addEventListener('click',()=>{ setTimeout(()=>{ try{showInbox();}catch(e){} },0); });
+  });
+}catch(e){}
+try{
+  const _rdInbox=renderDeck;
+  renderDeck=function(){ const r=_rdInbox(); try{renderInbox();}catch(e){} return r; };
+}catch(e){}
+try{
+  const _rgInbox=renderGroups;
+  renderGroups=function(){ const r=_rgInbox(); try{renderInbox();}catch(e){} return r; };
+}catch(e){}
+try{
+  const _pdInbox=paintDots;
+  paintDots=function(){ const r=_pdInbox(); try{renderInbox();}catch(e){} return r; };
+}catch(e){}
+try{
+  const _cuInbox=clearUnread;
+  clearUnread=function(id){ const r=_cuInbox(id); try{renderInbox();}catch(e){} return r; };
+}catch(e){}
+const _ecInbox=enterChat;
+enterChat=async function(id){ const r=await _ecInbox(id); try{showThread();}catch(e){} return r; };
+const _egInbox=enterGroup;
+enterGroup=async function(id){ const r=await _egInbox(id); try{showThread();}catch(e){} return r; };
+try{ window.__enterGroup=enterGroup; window.__sayAs=addHerBubbleAs; window.__loadGroup=loadGroup; window.__renderGroups=renderGroups; }catch(e){}
+setTimeout(()=>{ try{ const _pt3=paintTheme; paintTheme=function(){ const r=_pt3(); try{ if(window.__isGroup&&window.__isGroup()){ const g=(window.__groups?window.__groups():[]).find(x=>x.id===window.__activeGroup()); const pt=document.querySelector('#presenceText'); if(pt&&g){ const ms=g.memberIds.map(id=>{ try{return roster.find(c=>c.id===id).name;}catch(e){return '?';} }); pt.textContent='You\u2019re with '+g.name+' — '+ms.join(' · '); } } }catch(e){} return r; }; try{ paintTheme(); }catch(e){} }catch(e){} },2600);
+/* ==== meters: love / lust / interest ==== */
+function seedMetersFor(c){
+  if(!c) return;
+  if(typeof c.love==='number'&&typeof c.lust==='number'&&typeof c.interest==='number') return;
+  const R=(a,b)=>Math.round(a+Math.random()*(b-a));
+  if(c.id==='kayla'){ c.love=1; c.lust=8; c.interest=14; }
+  else if(c.id==='yuki'){ c.love=1; c.lust=6; c.interest=12; }
+  else if(c.id==='emi'){ c.love=1; c.lust=48; c.interest=58; }
+  else if(c.id==='mimi'){ c.love=1; c.lust=7; c.interest=16; }
+  else { c.love=1; c.lust=R(5,10); c.interest=R(10,18); }
+}
+try{ roster.forEach(seedMetersFor); }catch(e){}
+try{ roster.forEach(c=>{ if(c.met===false) c.love=1; if(typeof c.orbs!=='number') c.orbs=0; }); }catch(e){}
+function bumpMeters(id,d){
+  const c=roster.find(x=>x.id===id); if(!c) return;
+  if(c.id==='emi'){ const __k=2.8; d={love:(d.love||0)*__k,lust:(d.lust||0)*__k,interest:(d.interest||0)*__k}; }
+ try{ const __bb=(typeof bondNum==='function')?bondNum(c):0; const __damp=__bb>=4?1:(__bb===3?0.85:(__bb===2?0.7:(__bb===1?0.5:0.35))); if(__damp<1){ if((d.love||0)>0) d.love*=__damp; if((d.interest||0)>0) d.interest*=__damp; } }catch(e){}
+  seedMetersFor(c);
+  const cl=v=>Math.max(0,Math.min(100,Math.round(v)));
+  if(d.love) c.love=cl(c.love+d.love);
+  if(d.lust) c.lust=cl(c.lust+d.lust);
+  if(d.interest) c.interest=cl(c.interest+d.interest);
+  try{ saveDeck(); }catch(e){}
+  try{ renderMeterBars(); }catch(e){}
+}
+window.__bump=bumpMeters;
+function meterBlock(c){
+  try{
+    seedMetersFor(c);
+    const L=Math.round(c.love),U=Math.round(c.lust),I=Math.round(c.interest);
+    let read='';
+    if(U>=70) read+='She is feral for him — forward, filthy, cracks fast, begs. ';
+    else if(U>=45) read+='She gets wet easy and shows it. ';
+    else read+='She plays it cool sexually — he has to earn her cracks. ';
+    if(L>=70) read+='Devoted and yours — jealous, possessive, clingy, hates sharing him. ';
+    else if(L>=45) read+='She likes him a lot and gets jealous when rivals move in. ';
+    else read+='Not attached yet — she has her own life and could walk away. ';
+    if(I<30) read+='Barely thinks about him: short replies, slow, busy, makes him chase.';
+    else if(I<60) read+='Into him but not glued to her phone: warm, own agenda, notices effort.';
+    else read+='Glued to him: fast needy replies, starts things, notices everything he does.';
+    let Bbond=0; try{ Bbond=(typeof bondLevel==='function')?bondLevel(c):0; }catch(e){} return '\n\nFeelings for him (0-100, act like it, never state numbers): love '+L+', lust '+U+', interest '+I+'. '+read+' Bond with him: '+Math.max(0,Math.min(10,Math.round(Bbond)))+'/10 (her profile lists what unlocks at bond 2/4/6/8/10 — never grant a milestone early, never state the number). PHYSICALITY GATE (hard rule, never break character to explain it): bond 0-1: nothing sexual ever — no stripping, no touching herself, no sexting, no sexual body talk; if he pushes, deflect bratty and firm, make him earn it. bond 2-3: flirty/suggestive WORDS only, innuendo and dirty-talk-lite, still fully clothed, no touching herself. bond 4-5: real strip-tease language, flashing, lifting her top — but no full nudity and no touching herself for him yet. bond 6+: full green light per her lust — nude, explicit, feral if she feels it. FIRSTS LOCKS: she never initiates a first kiss before bond 4, never initiates a first night together before bond 6, never says "i love you" first before bond 7 — if he pushes any of these early she slows him down in character (sweet/awkward/bratty, never preachy, never says it back until earned).';
+  }catch(e){ return ''; }
+}
+try{
+  const _csM=charSystem;
+  charSystem=function(c){ try{ return _csM(c)+meterBlock(c); }catch(e){ return _csM(c); } };
+}catch(e){}
+try{
+  const _gsM=groupSystem;
+  groupSystem=function(t,all){ try{ return _gsM(t,all)+meterBlock(t); }catch(e){ return _gsM(t,all); } };
+}catch(e){}
+function meterVibe(c){
+  seedMetersFor(c);
+  const L=c.love,U=c.lust,I=c.interest, bits=[];
+  if(U>=70) bits.push('feral for you');
+  else if(U>=45) bits.push('gets wet easy');
+  else bits.push('plays it cool');
+  if(L>=70) bits.push('yours completely');
+  else if(L>=45) bits.push('jealous when rivals move');
+  else bits.push('could walk away');
+  if(I<30) bits.push('barely thinks about you');
+  else if(I<60) bits.push('warm, own life');
+  else bits.push('glued to you');
+  return bits.join(' • ');
+}
+function renderMeterBars(){
+  try{
+    document.querySelectorAll('#rosterGrid .bitch').forEach(card=>{
+      const nm=(card.querySelector('.bmeta b')||{}).textContent||'';
+      const c=(card.dataset.cid&&roster.find(x=>x.id===card.dataset.cid))||roster.find(x=>x.name===nm); if(!c||card.querySelector('.meters')) return;
+      seedMetersFor(c);
+      const d=document.createElement('div'); d.className='meters';
+      d.title='love '+Math.round(c.love)+' • lust '+Math.round(c.lust);
+      d.innerHTML='<i class="love"><b style="width:'+c.love+'%"></b></i><i class="lust"><b style="width:'+c.lust+'%"></b></i>';
+      const meta=card.querySelector('.bmeta'); if(meta) meta.appendChild(d);
+    });
+  }catch(e){}
+}
+function openMeterSheet(){
+  let list=[];
+  try{
+    if(isGroupMode()){ const g=groupById(activeGroupId); list=membersOf(g); document.getElementById('meterTitle').textContent=g.name+' — meters'; }
+    else { const c=activeChar(); if(c) list=[c]; document.getElementById('meterTitle').textContent=(c?c.name:'Her')+' — meters'; }
+  }catch(e){}
+  if(!list.length) return;
+  const rows=document.getElementById('meterRows'); rows.innerHTML='';
+  list.forEach(c=>{
+    seedMetersFor(c);
+    const d=document.createElement('div'); d.className='meterRow';
+    const line=(label,val)=>'<div class="mline '+label+'"><small>'+label+'</small><div class="track"><b style="width:'+Math.round(val)+'%"></b></div><em>'+Math.round(val)+'</em></div>';
+    d.innerHTML='<img><div class="mmeters"><b></b><span class="vibe"></span>'+line('love',c.love)+line('lust',c.lust)+'</div>';
+    d.querySelector('img').src=c.pfp||'src/images/kayla-pfp.jpg';
+    d.querySelector('b').textContent=c.name+(c.muted?' (muted)':'');
+    d.querySelector('.vibe').textContent=meterVibe(c);
+    rows.appendChild(d);
+  });
+  document.getElementById('meterSheet').classList.add('on');
+}
+try{
+  document.getElementById('meterBtn').onclick=()=>{ try{openMeterSheet();}catch(e){} };
+  document.getElementById('meterClose').onclick=()=>document.getElementById('meterSheet').classList.remove('on');
+  document.getElementById('meterSheet').onclick=e=>{ if(e.target.id==='meterSheet') e.target.classList.remove('on'); };
+function dossierEntries(c){ try{ const a=(typeof allChats!=='undefined'?allChats[c.id]:null)||[]; return a.filter(e=>e&&(e.k==='u'||e.k==='k'||e.k==='i')); }catch(e){ return []; } }
+function dossierWho(c,e){ try{ if(e.who===c.id) return c.name; if(e.who==='him') return 'You'; const m=roster.find(x=>x.id===e.who); return (m&&m.name)||'You'; }catch(_){ return 'You'; } }
+function dossierStats(c,es){
+  const him=es.filter(e=>e.k==='u'), her=es.filter(e=>e.k==='k'), img=es.filter(e=>e.k==='i');
+  const ts=es.map(e=>e.ts||0).filter(t=>t>0);
+  const span=ts.length>1?Math.max(0,ts[ts.length-1]-ts[0]):0, hrs=span/3600000;
+  const pace=hrs>0.05?((es.length/hrs).toFixed(1)+' msgs/hr across '+hrs.toFixed(1)+'h'):(es.length+' msgs in one burst');
+  let gap=0; for(let i=1;i<ts.length;i++) gap=Math.max(gap,ts[i]-ts[i-1]);
+  const gapStr=gap>0?(gap<3600000?Math.round(gap/60000)+' min':(gap/3600000).toFixed(1)+' h'):'—';
+  const avg=a=>a.length?Math.round(a.reduce((s,e)=>s+String(e.t||'').length,0)/a.length):0;
+  const f=t=>{ try{ return new Date(t).toLocaleString([],{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}); }catch(_){ return ''; } };
+  return {him:him.length,her:her.length,img:img.length,pace,gap:gapStr,avgHim:avg(him),avgHer:avg(her),first:ts.length?f(ts[0]):'—',firstSnap:img.length?f(img[0].ts):'none yet'};
+}
+function bondLimits(B){ if(B>=6) return 'full green light per her lust; firsts unlock by feel, never by force.'; if(B>=4) return 'strip-tease and flashing ok, no nudity yet; she slows down any first-kiss push below bond 4.'; if(B>=2) return 'flirty/suggestive words only, fully clothed; she deflects explicit pushes — bratty, but firm.'; return 'nothing sexual — she deflects and makes him earn it. This gate is what stops another 0-to-100 night.'; }
+function crackHtml(c){ try{ if(c._cracked) return '<li><b>wall</b>: BROKEN — '+esc(String((c._cracked&&c._cracked.how)||'hers'))+'</li>'; const R=((window.CRACK_ROUTES||{})[c.id]||(window.CRACK_ROUTES||{})._default); if(!R) return ''; const p=(c._crack&&c._crack.p)||0, tn=R.tenderNeed?(' · soft moment: '+((c._crack&&c._crack.tender)?'seen':'missing')):''; return '<li><b>her wall</b> ('+esc(R.label)+'): '+p+'/'+R.need+tn+'</li><li><b>crack hint</b>: '+esc(R.hint)+'</li>'; }catch(e){ return ''; } }
+function bondProgressHtml(c){ try{ let B=0; try{ B=(typeof bondNum==='function')?bondNum(c):0; }catch(e){} let today=''; try{ today=new Date().toISOString().slice(0,10); }catch(e){} const used=!!(c.bondDay&&c.bondDay.d===today&&(c.bondDay.g||0)>=1); const x=c.xchg||0; const v=c._bondVerdict; return '<li><b>progress</b>: '+x+'/3 exchanges toward her next honest read'+(used?' · today: bond moment spent':'')+'</li>'+'<li><b>her limits right now</b>: '+esc(bondLimits(B))+'</li>'+(v&&v.ts?('<li><b>last read</b>: '+(v.yes?'moved her':'did not move her')+' — '+esc(String(v.why||'').slice(0,140))+'</li>'):''); }catch(e){ return ''; } }
+async function dossierSection(c){
+  const d=document.createElement('div'); d.className='dsec';
+  const es=dossierEntries(c), st=dossierStats(c,es);
+  let B=0; try{ B=(typeof bondNum==='function')?bondNum(c):0; }catch(e){}
+  let status=''; try{ status=(typeof relStatus==='function')?relStatus(c):''; }catch(e){}
+  let facts=null; try{ facts=await cStore(c.id).get('facts'); }catch(e){}
+  const frows=[];
+  try{
+    const F=facts||{};
+    for(const k of ['outfit_current','location','env_place','activity','relationship','current_mood','kayla_mood','heat','lust_meter','confusion_level']) if(F[k]) frows.push('<li><b>'+esc(k.replace(/_/g,' '))+'</b>: '+esc(String(F[k]).slice(0,160))+'</li>');
+    if(F.chat_summary) frows.push('<li><b>scene</b>: '+esc(String(F.chat_summary).slice(0,300))+'</li>');
+    const memks=Object.keys(F).filter(k=>k.indexOf('mem_')===0);
+    memks.slice(-6).forEach(k=>frows.push('<li><b>noted</b>: '+esc(String(F[k]).slice(0,160))+'</li>'));
+  }catch(e){}
+  const bar=(label,val,color)=>'<div class="dstat">'+esc(label)+' <b>'+Math.round(val)+'</b><div class="dbar"><b style="width:'+Math.round(val)+'%;background:'+color+'"></b></div></div>';
+  const li=a=>'<li>'+esc(String(a).slice(0,200))+'</li>';
+  const tr=es.slice(-120).map(e=>{ let t=''; try{ t=new Date(e.ts).toLocaleString([],{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}); }catch(_){}
+    if(e.k==='i') return '<div class="drow"><span class="dt">'+esc(t)+'</span><b>'+esc(dossierWho(c,e))+'</b> 📸<img class="dthumb" loading="lazy" src="'+e.s+'"></div>';
+    return '<div class="drow'+(e.k==='u'?' him':'')+'"><span class="dt">'+esc(t)+'</span><b>'+esc(e.k==='u'?'You':c.name)+'</b> '+esc(String(e.t||'').slice(0,400))+'</div>'; }).join('');
+  d.innerHTML='<h4>'+esc(c.name)+' <span style="color:var(--text-3)">· '+esc(status)+' · bond '+B+'/10</span></h4>'
+   +'<div class="dgrid">'+bar('love',c.love||0,'var(--girl)')+bar('lust',c.lust||0,'var(--badge)')+bar('interest',c.interest||0,'var(--text-2)')+'<div class="dstat">orbs <b>'+(c.orbs||0)+'</b></div></div>'
+   +'<div class="dgrid"><div class="dstat">messages <b>'+st.him+' you / '+st.her+' her / '+st.img+' 📸</b>'+esc(st.pace)+'</div><div class="dstat">rhythm <b>gap '+esc(st.gap)+'</b>avg '+st.avgHim+' / '+st.avgHer+' chars<br>since '+esc(st.first)+' · first 📸 '+esc(st.firstSnap)+'</div></div>'
+   +'<h4>bond — the honest fuel gauge</h4><ul class="dlist">'+bondProgressHtml(c)+'</ul>'
+   +'<h4>crack route</h4><ul class="dlist">'+crackHtml(c)+'</ul>'
+   +'<h4>what she remembers</h4><ul class="dlist">'+(((c.mem||[]).map(li).join(''))||'<li>—</li>')+'</ul>'
+   +'<h4>diary (latest)</h4><ul class="dlist">'+(((c.diary||[]).slice(-4).reverse().map(li).join(''))||'<li>—</li>')+'</ul>'
+   +'<h4>state</h4><ul class="dlist"><li><b>wants</b>: '+esc(String(c.want||'—').slice(0,200))+'</li><li><b>grudge</b>: '+esc(String(c.grudge||'none').slice(0,200))+'</li><li><b>firsts</b>: '+esc(JSON.stringify(c.firsts||[]).slice(0,200))+'</li><li><b>she clocked about you</b>: '+esc(((c.he||[]).join(' / ')||'—').slice(0,400))+'</li>'+frows.join('')+'</ul>'
+   +'<h4>transcript'+(es.length>120?' (last 120 of '+es.length+')':' ('+es.length+')')+'</h4><div class="dtrans">'+(tr||'no messages yet')+'</div>'
+   +'<div class="frow" style="margin-top:var(--s-2)"><button data-a="debrief">honest debrief — what went wrong?</button></div><div class="ddebrief" hidden></div>';
+  try{ d.querySelector('[data-a="debrief"]').onclick=()=>runDebrief(c.id,d); }catch(e){}
+  return d;

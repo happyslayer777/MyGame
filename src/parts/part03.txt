@@ -1,0 +1,500 @@
+  reset:'explicit',tender:null,
+  diary:'I chose him. Let him see me unravel.',soul:'your wall already broke for him — you chose him; soft and filthy for him now, still elegant with everyone else'},
+ mimi:{label:'Claim the Lap',need:6,tenderNeed:false,
+  hint:'She imprints on warmth and play. Spoil the kitten and she is yours; go cold or sharp and she forgets you by dinner.',
+  prog:/(head ?pat|good girl|treat|come here( kitty)?|purr|soft|snack|belly rub|cuddle|cutie|kitten|ear scratch|chin scratch|my (good )?girl|play with me)/,
+  reset:/\b(whatever|shut up|leave me alone|go away|stop (it|that)|annoying|not now|bore|busy)\b/,
+  tender:null,
+  diary:'He is my person now. Lap: his. Forever.',soul:'you already imprinted on him — he is your person; clingy, purring, possessive of his lap'},
+ _default:{label:'Prove It',need:6,tenderNeed:true,
+  hint:'Bold moves plus one real soft moment. Lead, do not grovel.',
+  prog:/(come with me|i know a (place|spot)|follow me|trust me|you'?re mine|\bmy girl\b|good girl|i'?ve got you|leave it to me|stay with me)/,
+  reset:null,
+  tender:/(i love you|love you|miss you|care about|so sweet|thank you|means (a lot|so much)|gentle|tender|cuddle|hold me|proud of you|you'?re (beautiful|gorgeous|stunning|amazing)|i'?ve got you)/,
+  diary:'Something gave way. He is in.',soul:'your wall already broke for him — you let him in; devoted under the edge'}
+};
+window.crackTick=function(id,hisText,herText){
+ try{
+  const ALL=(window.CRACK_ROUTES||{}); const R=ALL[id]||ALL._default; if(!R) return;
+  const c=roster.find(x=>x.id===id); if(!c||c._cracked) return;
+  try{ if(typeof bondNum==='function'&&bondNum(c)>=6) return; }catch(e){}
+  c._crack=c._crack||{p:0,tender:false};
+  const h=String(hisText||'').toLowerCase();
+  let reset=false;
+  if(R.reset==='explicit'){ try{ reset=window.__isExplicitPush(hisText); }catch(e){} }
+  else if(R.reset&&R.reset.test&&R.reset.test(h)) reset=true;
+  if(reset){ if((c._crack.p||0)>0){ c._crack.p=0; try{ saveDeck(); }catch(e){} } return; }
+  if(R.prog&&R.prog.test&&R.prog.test(h)) c._crack.p=(c._crack.p||0)+1;
+  if(R.tender&&R.tender.test&&R.tender.test(h)) c._crack.tender=true;
+  if(c._crack.p>=R.need&&(!R.tenderNeed||c._crack.tender)){
+    c._cracked={ts:Date.now(),how:R.label,note:R.soul};
+    c._crack={p:R.need,tender:true};
+    c.bond=Math.min(10,(+c.bond||0)+2); if(c.peak==null||c.bond>c.peak) c.peak=c.bond;
+    c.love=Math.min(100,(+c.love||0)+15); c.lust=Math.min(100,(+c.lust||0)+10); c.interest=Math.min(100,(+c.interest||0)+15);
+    try{ if(!Array.isArray(c.diary)) c.diary=[]; c.diary.push(R.diary); while(c.diary.length>8) c.diary.shift(); }catch(e){}
+    try{ saveDeck(); }catch(e){}
+    try{ if(typeof renderDeck==='function') renderDeck(); }catch(e){}
+    try{ if(window.toast) window.toast(c.name+' broke for you'); }catch(e){}
+  } else { try{ saveDeck(); }catch(e){} }
+ }catch(e){}
+};
+window.reactTick=function(id,hisText,herText,row){
+ try{
+  const c=roster.find(x=>x.id===id); if(!c) return;
+  const h=String(hisText||'').toLowerCase(), s2=String(herText||'').toLowerCase();
+  const ht=h+' '+s2;
+  const TENDER=/(i love you|love you|miss you|care about|so sweet|thank you|means (a lot|so much)|gentle|tender|cuddle|hold me|proud of you)/;
+  const PRAISE=/(sexy|gorgeous|beautiful|amazing|perfect|incredible|goddess|stunning|hot body)/;
+  const COMMAND=/\b(mine|my girl|good girl|obey|submit|kneel|behave|do as i say|because i said|my call|my rules|come here|look at me|stay (still|there)|hold still)\b/;
+  const HEATRE=/(dick|cock|pussy|cunt|tits?|naked|nude|strip|panties|\bbra\b|slut|whore|\bcum\b|orgasm|fuck|suck|lick|thrust|mount|breed|pound|drill|horny|blowjob|handjob|masturbat|penetrat|moan|leak|soak|dripp?ing|throb|arch|gasp|shud|trembl|mush|wreck|ruin|filth|thigh|damp|translucent)/g;
+  const CONTEMPT=/(ugly|stupid|dumb\b|idiot|hate you|worthless|pathetic|loser|nobody wants|shut up|fat (pig|cow)|braindead)/;
+  const COLD=/(whatever|leave me alone|go away|not now|dont care|do not care|boring|bore me)/;
+  const APOLOGY=/\b(sorry|my bad|i apologize|forgive me|please forgive|didnt mean it|take it back)\b/;
+  const marks=(ht.match(HEATRE)||[]).length;
+  const isTender=TENDER.test(h), isPraise=PRAISE.test(h), isCommand=COMMAND.test(h);
+  const heatPlay=marks>0;
+  const isContempt=CONTEMPT.test(h)&&!heatPlay;
+  const isCold=COLD.test(h)&&!isTender;
+  const isApology=APOLOGY.test(h);
+  const shortMsg=String(hisText||'').trim().length<10;
+  const lowEffort=shortMsg&&!isTender&&!isPraise&&!isCommand&&!heatPlay;
+  const asked=h.indexOf('?')>=0;
+  const FINISH_IN=/(cum|nut(ted|ting)?|came|bust(ed|ing)?|erupt(ed|ing)?|finish(ed|ing)?|fill(ed|ing)?|pump(ed|ing)?|seed(ed|ing)?|breed|creampie).{0,40}(inside|in her|in you|deep in|womb)|fill(ed)? (her|you) up|knock(ed)? (her|you) up/;
+  const finished=FINISH_IN.test(h);
+  let lust=0, love=0, interest=0;
+  if(finished){ love+=2; lust+=3; interest+=2; }
+  if(marks>0) lust=Math.min(10,lust+2+Math.floor(marks/3));
+  if(isTender) love+=3;
+  if(isPraise) love+=1;
+  if(isContempt) love-=4;
+  if(isCold) love-=2;
+  if(isApology) love+=1;
+  if(lust>0||love>0) interest+=2; else interest+=1;
+  if(isTender) interest+=2;
+  if(isPraise) interest+=1;
+  if(isCommand){ interest+=2; if(!heatPlay) lust+=1; }
+  if(asked) interest+=1;
+  if(lowEffort) interest-=2;
+  if(isCold) interest-=3;
+  if(isContempt) interest-=2;
+  const HERWARM=/(love you|miss you|cuddle|haha|hehe|giggle|hold me|need you)/;
+  const warm=HERWARM.test(s2);
+  if(warm){ love+=1; interest+=1; }
+  if(String(herText||'').length<45&&!warm) interest-=1;
+  const b0=(typeof bondNum==='function')?bondNum(c):c.bond;
+  const L0=c.love, U0=c.lust, I0=c.interest;
+  try{ if(typeof window.__bump==='function') window.__bump(id,{love:love,interest:interest,lust:lust}); }catch(e){}
+  const dL=Math.round(c.love)-Math.round(L0), dU=Math.round(c.lust)-Math.round(U0), dI=Math.round(c.interest)-Math.round(I0);
+  let bondNote='';
+  if(isTender&&!isContempt){ try{ if(typeof window.bondGain==='function') window.bondGain(id,1); }catch(e){} }
+  if(isContempt||(isCold&&lowEffort)){
+    try{
+      const bb=(typeof bondNum==='function')?bondNum(c):c.bond;
+      if(bb>0){ c.bond=Math.max(0,bb-1); c.lastContact=Date.now(); try{ saveDeck(); }catch(e){} try{ if(typeof renderDeck==='function') renderDeck(); }catch(e){} bondNote='bond -1'; }
+      c.xchg=Math.max(0,(c.xchg||0)-2); try{ saveDeck(); }catch(e){}
+      try{ if(!Array.isArray(c.diary)) c.diary=[]; c.diary.push('He was cruel to me. It stuck.'); while(c.diary.length>8) c.diary.shift(); }catch(e){}
+      bondNote='bond -1';
+    }catch(e){}
+  }
+  const b1=(typeof bondNum==='function')?bondNum(c):c.bond;
+  let claimNote='';
+  if(finished){
+    try{
+      if(!c.firsts||typeof c.firsts!=='object') c.firsts={};
+      if(!c.firsts.filled){
+        c.firsts.filled=Date.now();
+        try{ if(!Array.isArray(c.diary)) c.diary=[]; c.diary.push('He finished inside me. No going back now.'); while(c.diary.length>8) c.diary.shift(); }catch(e){}
+        try{ if(window.toast) window.toast('first: he claimed '+c.name); }catch(e){}
+        try{ saveDeck(); }catch(e){}
+        claimNote='claimed';
+      }
+    }catch(e){}
+    try{ if(typeof window.bondGain==='function'){ window.bondGain(id,1); window.bondGain(id,1); } }catch(e){}
+  }
+  if(!bondNote&&b1>b0) bondNote='bond '+b0+' to '+b1;
+  try{
+    if(row&&row.parentNode){
+      const bits=[];
+      if(dU) bits.push('<span class="'+(dU>0?'dup':'ddn')+'">'+(dU>0?'+':'')+dU+' lust</span>');
+      if(dL) bits.push('<span class="'+(dL>0?'dup':'ddn')+'">'+(dL>0?'+':'')+dL+' love</span>');
+      if(dI) bits.push('<span class="'+(dI>0?'dup':'ddn')+'">'+(dI>0?'+':'')+dI+' interest</span>');
+      if(bondNote) bits.push('<span class="ddn">'+bondNote+'</span>');
+      if(claimNote) bits.push('<span class="dup">'+claimNote+'</span>');
+      if(bits.length){
+        const dd=document.createElement('div'); dd.className='deltas'; dd.innerHTML=bits.join('');
+        try{ row.parentNode.insertBefore(dd,row.nextSibling); }catch(e){ try{row.appendChild(dd);}catch(_){} }
+        try{ if(typeof scrollBottom==='function') scrollBottom(); }catch(e){}
+        try{ setTimeout(function(){ try{ dd.style.opacity='0.35'; }catch(e){} },6000); }catch(e){}
+      }
+    }
+  }catch(e){}
+ }catch(e){}
+};
+
+window.aiRate=function(id,hisText,herText,row){
+ try{
+  const p=(async()=>{
+   try{
+    const c=roster.find(x=>x.id===id); if(!c) return;
+    let tr='';
+    try{ const es=((typeof allChats!=='undefined'?allChats[id]:null)||[]).filter(e=>e&&(e.k==='u'||e.k==='k')).slice(-6);
+      tr=es.map(e=>(e.k==='u'?'Preston: '+String(e.t||'').slice(0,300):c.name+': '+String(e.t||'').slice(0,300))).join('\n').slice(-1800); }catch(e){}
+    if(!tr) return;
+    const mems=(((c.mem||[]).slice(-6).join(' / '))||'nothing yet').slice(0,600);
+    const sys='You are '+c.name+' ('+String(c.tagline||'')+', '+String(c.personality||'').slice(0,200)+'). '+((c.firsts&&c.firsts.filled)?'Preston has claimed your body and you know it. ':'You decide for yourself what he is to you so far. ')+'Read these last exchanges and rate how they moved YOU right now. Current feelings: love '+Math.round(c.love)+'/100, lust '+Math.round(c.lust)+'/100, interest '+Math.round(c.interest)+'/100, bond '+c.bond+'/10. Reply ONLY JSON {"love":-10 to 10,"lust":-10 to 10,"interest":-10 to 10,"bond":-1 to 1,"why":"under 15 words, first person, your voice"}. Bold dominance that lands = lust/interest up big. Real tenderness = love and bond up. Cruelty or cold distance = love/interest/bond down. Score honestly from the exchanges, not the numbers.';
+    const full=sys+'\nExchanges:\n'+tr+'\nWhat you already know of him: '+mems;
+    let v=null;
+    try{ const raw=await aiText(full); const s=String(raw); v=JSON.parse(s.slice(s.indexOf('{'),s.lastIndexOf('}')+1)); }catch(e){ return; }
+    if(!v||typeof v!=='object') return;
+    const cl=(n,a,b)=>Math.max(a,Math.min(b,Math.round(Number(n)||0)));
+    const dL=cl(v.love,-10,10), dU=cl(v.lust,-10,10), dI=cl(v.interest,-10,10);
+    let dB=parseInt(v.bond,10); if(!(dB>=-1&&dB<=1)) dB=0;
+    const cc=roster.find(x=>x.id===id); if(!cc) return;
+    try{ if(typeof window.__bump==='function'&&(dL||dU||dI)) window.__bump(id,{love:dL,interest:dI,lust:dU}); }catch(e){}
+    let bnote='';
+    if(dB!==0){
+      try{
+        const nb=Math.max(0,Math.min(10,cc.bond+dB));
+        if(nb!==cc.bond){ cc.bond=nb; if(cc.peak==null||nb>cc.peak) cc.peak=nb; cc.lastContact=Date.now();
+          try{ if(!Array.isArray(cc.diary)) cc.diary=[]; cc.diary.push((dB>0?'Something shifted with Preston. ':'He is losing me. ')+String(v.why||'').slice(0,120)); while(cc.diary.length>8) cc.diary.shift(); }catch(e){}
+          try{ saveDeck(); }catch(e){} try{ if(typeof renderDeck==='function') renderDeck(); }catch(e){}
+          try{ if(window.toast) window.toast(cc.name+(dB>0?' — bond '+nb:' pulled away — bond '+nb)); }catch(e){}
+          bnote='bond '+(dB>0?'+':'')+dB;
+        }
+      }catch(e){}
+    }
+    try{
+      if(row&&row.parentNode){
+        const bits=[];
+        if(dU) bits.push('<span class="'+(dU>0?'dup':'ddn')+'">'+(dU>0?'+':'')+dU+' lust</span>');
+        if(dL) bits.push('<span class="'+(dL>0?'dup':'ddn')+'">'+(dL>0?'+':'')+dL+' love</span>');
+        if(dI) bits.push('<span class="'+(dI>0?'dup':'ddn')+'">'+(dI>0?'+':'')+dI+' interest</span>');
+        if(bnote) bits.push('<span class="ddn">'+bnote+'</span>');
+        if(bits.length){
+          let dd=(row.nextSibling&&row.nextSibling.className==='deltas')?row.nextSibling:null;
+          if(!dd){ dd=document.createElement('div'); dd.className='deltas'; row.parentNode.insertBefore(dd,row.nextSibling); }
+          dd.innerHTML+=' <span class="she">she rates:</span>'+bits.join('');
+          try{ if(typeof scrollBottom==='function') scrollBottom(); }catch(e){}
+        }
+      }
+      try{ var __ds=document.getElementById('dossierSheet'); if(__ds&&__ds.classList.contains('on')){ try{ document.getElementById('dossierBtn').click(); }catch(e){} } }catch(e){}
+      try{ var __ms=document.getElementById('meterSheet'); if(__ms&&__ms.classList.contains('on')){ try{ document.getElementById('meterBtn').click(); }catch(e){} } }catch(e){}
+    }catch(e){}
+   }catch(e){}
+  })();
+  if(p&&p.catch) p.catch(()=>{});
+ }catch(e){}
+};
+
+window.__loopGuard=async function(id,text,row){
+ try{
+  const norm=s=>String(s||'').toLowerCase().replace(/[^a-z ]/g,' ').split(/\s+/).filter(w=>w.length>3);
+  const cur=norm(text);
+  window.__lastHerBy=window.__lastHerBy||{};
+  const prev=window.__lastHerBy[id];
+  window.__lastHerBy[id]=text;
+  if(!prev||cur.length<8) return;
+  const pn=norm(prev);
+  if(pn.length<8) return;
+  const set=new Set(pn); let hit=0;
+  for(const w of cur) if(set.has(w)) hit++;
+  const sim=hit/Math.min(cur.length,pn.length);
+  if(sim>0.8&&row&&row.dataset&&row.dataset.mid&&typeof window.__regenHer==='function'&&!window.__loopBusy){
+    window.__loopBusy=true;
+    try{ await window.__regenHer(row.dataset.mid); }catch(e){}
+    try{ window.__loopBusy=false; }catch(e){}
+  }
+ }catch(e){ try{ window.__loopBusy=false; }catch(_){} }
+};
+
+async function send(){ try { const c=activeChar(); if(!c){ switchTab('deck'); return; } const t=inp.value.trim(); if(!t) return; agCtx(t); if(!window.__isGroup()) agMeet(activeId,t); try{ if(window.AG&&window.AG.girls&&window.__isGroup&&!window.__isGroup()){ const __s=window.AG.girls[activeId]||(window.AG.girls[activeId]={met:true,knows:[]}); for(const __r of (typeof roster!=='undefined'?roster:[])){ if(__r.id!==activeId&&t.toLowerCase().includes(__r.name.toLowerCase())&&!__s.knows.includes(__r.id)) __s.knows.push(__r.id); } try{localStorage.setItem('agh.ctx.v1',JSON.stringify(window.AG));}catch(e){} } }catch(e){} inp.value=''; autoresize();
+ try{ window.__bondDeflect=false; const __bc=(typeof activeChar==='function'?activeChar():null); let __inG=false; try{ __inG=(typeof window.__isGroup==='function')?window.__isGroup():false; }catch(_){} const __bb=(__bc&&typeof bondNum==='function')?bondNum(__bc):9; if(__bc&&!__inG&&__bb<2){ const __tl=' '+String(t||'').toLowerCase()+' '; if(/(dick|cock|pussy|cunt|\btits?\b|naked|nude|\bstrip\b|panties|\bbra\b|\bfinger\b|slut|whore|\bcum\b|orgasm|\bfuck|suck|lick|thrust|\bmount\b|breed|\bpound\b|\bdrill\b|horny|blowjob|handjob|masturbat|penetrat|inside (her|you|me)|take (it|that|those) off|take off your|bend over|on your knees|\bspread\b|on all fours|doggy|rubs? (your|her|my)|shove|throb)/.test(__tl)) window.__bondDeflect=true; } }catch(_){ try{window.__bondDeflect=false;}catch(__){} }
+ addUserBubble(t); chatHistory.push({role:'user',content:t}); const transcript=chatHistory.slice(-18).map(m=>`${m.role==='user'?HIS_NAME:c.name}: ${m.content}`).join('\n'); const fb=factsBlock(); const stageHint='Act like your lust meter (stated separately): you stay restrained and private when not feeling it (clothes stay on unless he really earns it) and get forward and filthy when you are. Horniness rises and falls, never a permanent switch. Never mention, label, quote, or discuss any meter — no numbers, no levels, just behave it. Still chatty with opinions, teasing questions, things she notices. Never ask him personal questions. Never repeat yourself: fresh wording, a new physical detail and a new action in every single reply — if your last replies sound alike, change everything this time.'; sendBtn.disabled=true; const typingEl=addTypingBubble(c.name+' is typing'); const __myCtx=(typeof __ctxKey==='function'?__ctxKey():''); const __myId=activeId; const sys=charSystem(c); const t0=performance.now(); window.__sendStart=t0; let firstChunkAt=0; const streamBox=document.createElement('span'); const out=await aiText({instruction:`${sys}\n\n${stageHint}\n\n${transcript}${fb?`\n\nEstablished facts (stay consistent, react realistically):\n${fb}`:''}${typeof replyCtx==='function'?replyCtx():''}${agencyBlock(activeId)}${window.__bondDeflect?'\n\nHARD OVERRIDE (highest priority, never mention it): he just pushed for explicit sex and you barely know him. Deflect IN CHARACTER — bratty, amused, firm, zero preaching. Shut it down, redirect to something non-sexual, do NOT describe arousal, nudity, stripping, or any compliance. Under 60 words.':''}\n\n${c.name}:`, onChunk:(d)=>{ try{ if(!firstChunkAt){ firstChunkAt=performance.now(); window.__ttfb=Math.round(firstChunkAt-t0); const ty=typingEl.querySelector('.typing'); if(ty) ty.remove(); const bub=typingEl.querySelector('.bubble'); if(bub) bub.appendChild(streamBox); } streamBox.textContent=d.fullTextSoFar; }catch(e){} }}); typingEl.remove(); const text=String(out); if((typeof __ctxKey==='function'?__ctxKey():'')!==__myCtx){ try{ if(typeof __stashSolo==='function') await __stashSolo(__myId,{k:'k',t:text,id:(typeof newMid==='function'?newMid():'m'+Date.now()),ts:Date.now(),who:__myId}); }catch(_e){} return; } var __herRow=null; try{ __herRow=addHerBubble(text); }catch(__he){} try{ if(__herRow&&__herRow.dataset&&window.__xchgCountedMid!==__herRow.dataset.mid){ if(c&&c.id&&typeof window.bondGain==='function') window.bondGain(c.id,1); try{ window.__xchgCountedMid=__herRow.dataset.mid; }catch(__te){} } }catch(__he2){} chatHistory.push({role:'assistant',content:text}); if(chatHistory.length>30) chatHistory=chatHistory.slice(-30); try{ if(typeof window.reactTick==='function') window.reactTick(c.id,t,text,__herRow); }catch(__re){} try{ if(typeof window.aiRate==='function') window.aiRate(c.id,t,text,__herRow); }catch(__ae){} try{ if(typeof window.__loopGuard==='function') window.__loopGuard(c.id,text,__herRow); }catch(__le){} try{ if(typeof window.crackTick==='function'&&c&&c.id) window.crackTick(c.id,t,text); }catch(e){} try{ var __ds=document.getElementById('dossierSheet'); if(__ds&&__ds.classList.contains('on')){ try{ document.getElementById('dossierBtn').click(); }catch(__de){} } }catch(__dse){} try{ var __ms=document.getElementById('meterSheet'); if(__ms&&__ms.classList.contains('on')){ try{ document.getElementById('meterBtn').click(); }catch(__me){} } }catch(__mse){} await learnFacts(); try{ noteExchange(c?c.id:null,t,text); }catch(e){} } catch(e){ addErrorBubble('[error: '+(e&&e.message?e.message:e)+']'); } finally { sendBtn.disabled=false; try{if(typeof clearReply==='function') clearReply();}catch(e){} } }
+const GARMENT_RE = /kimono|robe|kimono-style|obi|gown|sandal|nipples|nudity|hoodie|jacket|coat|sweater|shirt|tee\b|t-shirt|kangaroo|pocket|sleeve|drawstring|cotton|denim|cutoff|shorts|skirt|dress|bikini|swimsuit|swim|bra\b|pant|lingerie|legging|jean|trouser|bottoms|uniform|ski|snow|glove|sock|shoe|boot|heel|cropped|frayed|camel|underwear|clothes|clothing|outfit|nude|naked|stripped|hem\b|slit\b|plunging|neckline|collar\b|belt\b|cinched|neck\b/i;
+const CLOTHED_EXPLICIT_EXTRA = "(knees together or naturally posed, crotch fully covered:1.4), (bust pressed full against fabric:1.3), (faint nipple print through fabric:1.2), (damp clinging fabric:1.2)";
+function identityLockFor(c,variant){ const style=(c&&c.style)||''; const chunks=style.split(',').map(s=>s.trim()).filter(Boolean); const kept=chunks.filter(ch=>!GARMENT_RE.test(ch)&&!(variant==='CLOSEUP'&&/(ass|butt|bust|breast|chest|cleavage|hair|hime|bangs|sidelocks|eyes|brows|lips|mouth|nose|teeth|ears|face|head|portrait|grin|smile)\b/i.test(ch))); let lock=kept.join(', '); lock=lock.replace(/,\s*,/g,',').replace(/^[,\s]+|[,\s]+$/g,'').trim(); if(c&&c.canonTraits) lock+=', '+c.canonTraits; return lock||'drawn anime illustration, 1girl, solo, adult woman, masterpiece'; }
+function renderOutfitState(){ const el=document.getElementById('outfitState'); if(!el) return; const c=activeChar(); const w=facts.outfit_current||(c?c.outfit:''); el.innerHTML=w?`wearing now: <b>${esc(String(w).slice(0,160))}</b>`:''; }
+/* ==== shared accuracy core: ONE prompt/negative stack used by every generator ====
+   Rules the model actually obeys: identity FIRST (early words win), then the ACTION
+   (what she is doing, also early), then outfit ground truth, then room, style last.
+   Never describe him — he is the unseen camera, solo 1girl only. */
+function negFor(c,variant,opts){
+  try{
+    opts=opts||{};
+    const list=Array.isArray(c)?c:(c?[c]:[]);
+    let n=NEG_BASE+ANATOMY_NEG+', second person, man, male body, boy, extra person, male hands, male arms';
+    const nudeish=(variant==='NUDE'||variant==='CLOSEUP'||(variant==='PARTIAL'&&opts.bottomless));
+    if(nudeish) n+=', hoodie, shirt, dress, clothes, pants, shorts, underwear, panties, tube top, bandeau, bra, bikini top, strapless top';
+    if(variant==='PARTIAL'&&opts.bottomless) n+=', denim shorts, shorts, pants, panties, underwear, bottoms, skirt';
+    if(variant==='CLOSEUP') n+=', (face:1.5), (head:1.4), (upper body:1.4), (breasts:1.3)';
+    if(nudeish) n+=', (pink vulva:1.4), (pink pussy:1.4), (pink labia:1.4), (red vulva:1.3), (red labia:1.3), (inner labia detail:1.5), (open hole:1.4), (gape:1.4), (visible hole:1.4), (inner detail:1.4), (pink nub:1.4), (red nub:1.3), penis, male genitalia, (futanari:1.4), (penis attached to girl:1.4), (dickgirl:1.4)';
+    else n+=', penis, male genitalia';
+    if(!opts.explicit&&nudeish) n+=', cameltoe pink, dark crotch shadow, black triangle, dark mark between legs, bulbous crotch, phallic shape';
+    for(const g of list){ if(!g) continue; if(g.id==='kayla') n+=', '+NEG_KAYLA; else if(g.id==='emi') n+=', '+NEG_EMI; else if(g.id==='mimi') n+=', '+NEG_MIMI; }
+    return n;
+  }catch(e){ return NEG_BASE; }
+}
+const SELFIE_LOCK='(selfie photo:1.4), (arm extended toward viewer holding smartphone:1.4), (front camera angle:1.3), (looking into the lens:1.2)';
+const MIRROR_LOCK='(mirror selfie:1.4), (holding smartphone up in one hand:1.4), (looking into the phone screen:1.2)';
+function photoPrompt(c,o){
+  try{
+    o=o||{};
+    const parts=[identityLockFor(c,o.variant||'CLOTHED')];
+    if(o.activity) parts.push(String(o.activity).slice(0,400));
+    if(o.outfit) parts.push('wearing '+String(o.outfit).slice(0,200));
+    else if(c&&c.outfit) parts.push('wearing '+String(c.outfit).slice(0,200));
+    if(o.setting) parts.push('in '+String(o.setting).slice(0,200));
+    if(o.framing) parts.push(String(o.framing).slice(0,220));
+    else parts.push((Math.random()<0.35?MIRROR_LOCK:SELFIE_LOCK)+', solo, single girl only, no extra people, no duplicates');
+    if(o.extra) parts.push(String(o.extra).slice(0,500));
+    const tail=[POV_LOCK,QUALITY].join(', ');
+    const head=parts.join(', ').replace(/,\s*,/g,',');
+    return (head.slice(0,1650)+', '+tail);
+  }catch(e){ return ((c&&c.style)||'drawn anime illustration, 1girl, solo, adult woman, masterpiece')+', '+POV_LOCK+', '+QUALITY; }
+}
+async function girlFacts(id){ try{ const st=cStore(id); const f=await st.get('facts'); return (f&&typeof f==='object'&&!Array.isArray(f))?f:{}; }catch(e){ return {}; } }
+/* ==== ambient DM activity pics: she snaps what she's doing, unprompted ==== */
+async function dmPhotoTick(){
+  try{
+    if(Date.now()-(window.__lastDmPic||0)<6*60*1000) return 'cooldown';
+    try{
+      let gate=true;
+      if(document.visibilityState!=='visible') gate=false;
+      const sb=(typeof snapBtn!=='undefined'&&snapBtn)?snapBtn:document.getElementById('snapBtn');
+      if(sb&&sb.disabled) gate=false;
+      if(!gate&&!window.__forceDmPic) return 'gated';
+    }catch(e){}
+    if(window.__devMode&&!window.__forceDmPic) return 'dev';
+    const __fD=window.__forceDmPic===true; window.__forceDmPic=false;
+    if(!__fD&&Date.now()-(window.__lastAmbient||0)<600000) return 'ambient-cool';
+    try{ if(!__fD&&Date.now()-(window.__lastUserActive||0)<120000) return 'chatting'; }catch(e){}
+    const pool=roster.filter(c=>c.met!==false&&!c.muted&&!(c.sulkUntil&&Date.now()<c.sulkUntil)&&(c.interest||0)>=35&&bondNum(c)>=3&&(Date.now()-((window.__lastDmPicBy||{})[c.id]||0)>30*60*1000)&&((typeof unread!=='undefined'&&unread?unread[c.id]:0)||0)<3);
+    if(!pool.length||Math.random()>0.5) return 'skip';
+    window.__lastDmPic=Date.now(); window.__lastDmPicBy=window.__lastDmPicBy||{}; window.__lastDmPicBy[m.id]=Date.now(); try{window.__lastAmbient=Date.now();}catch(e){}
+    pool.sort((a,b)=>((b.interest||0)+Math.random()*30)-((a.interest||0)+Math.random()*30));
+    const m=pool[0];
+    const gf=await girlFacts(m.id);
+    const wear=(gf.outfit_current||m.outfit||'').slice(0,200);
+    const I=Math.round(m.interest||0),U=Math.round(m.lust||0),L=Math.round(m.love||0);
+    const variant=(U>=80&&L>=60&&bondNum(m)>=6)?'NUDE':'CLOTHED';
+    const spicy=U>=60&&bondNum(m)>=4;
+    let act='taking a mirror selfie in her room, cute pose, showing off her outfit', cap='wish you were here';
+    try{
+      const raw=await aiText('You are '+(m.name||'Her')+' ('+(m.tagline||'')+', voice: '+String(m.personality||'').slice(0,300)+'). Preston is yours and you want his attention RIGHT NOW. Reply ONLY JSON {"activity":"one dense visual line: exact pose + what she is doing + where, clothed'+(variant==='NUDE'?' but about to strip for him':'')+', photo-worthy","caption":"flirty texting line under 25 words sending him the pic, his name is Preston"}. Outfit ground truth: '+wear+'. Recent memories: '+(((m.mem||[]).slice(-3).join(' / '))||'none')+'. '+soulBrief(m)+' Only the JSON.');
+      const o=JSON.parse(String(raw).slice(String(raw).indexOf('{'),String(raw).lastIndexOf('}')+1));
+      if(o&&o.activity) act=String(o.activity).slice(0,300);
+      if(o&&o.caption) cap=String(o.caption).slice(0,200);
+    }catch(e){}
+    const pr=photoPrompt(m,{variant,activity:'candid photo of what she is doing right now, '+act,outfit:variant==='NUDE'?'':wear,setting:(gf.env_desc||'').slice(0,200)||'her room',framing:'solo front-camera selfie, arm extended holding smartphone, looking into the lens, single girl only, no extra people, no duplicates',extra:variant==='NUDE'?('fully nude, no clothes, no fabric, '+(m.id==='emi'||m.id==='mimi'?SPREAD_EMI:SPREAD)):(spicy?CLOTHED_EXPLICIT_EXTRA:'')});
+    const neg=negFor(m,variant,{explicit:true,bottomless:variant==='NUDE'});
+    const seed=Math.floor(Math.random()*2147483647);
+    let src=null;
+    for(let t=0;t<2&&!src;t++){ try{ const r=await image(pr,{resolution:variant==='NUDE'?'512x768':'512x768',negativePrompt:neg,seed:t?Math.floor(Math.random()*2147483647):seed,guidanceScale:8}); const s=r&&(r.dataUrl||r); if(s&&typeof s==='string'&&s.indexOf('data:')===0) src=s; }catch(e){} }
+    if(!src) return 'genfail';
+    const meta={prompt:pr,neg,res:'512x768',seed,gs:8};
+    const live=(typeof activeId!=='undefined'&&activeId===m.id);
+    let groupLive=false; try{ groupLive=typeof isGroupMode==='function'&&isGroupMode(); }catch(e){}
+    if(live&&!groupLive&&typeof addHerBubble==='function'&&typeof addImageBubble==='function'){
+      addHerBubble(cap); try{ chatHistory.push({role:'assistant',content:cap}); }catch(e){}
+      addImageBubble(src,meta);
+    } else if(typeof __stashImg==='function'){
+      try{ await __stashImg(m.id,m.id,src,{p:pr,n:neg,r:'512x768',w:seed},null); }catch(e){}
+      try{
+        const st=cStore(m.id);
+        const arr=(await st.get('entries'))||[];
+        arr.push({k:'k',t:cap,id:(typeof newMid==='function'?newMid():'m'+Date.now()),ts:Date.now(),who:m.id});
+        const slim=arr.slice(-80);
+        await st.set('entries',slim);
+        try{ allChats[m.id]=slim; }catch(e){}
+        try{ const box=(window.__unreadBox?window.__unreadBox():null); if(box){ box[m.id]=(box[m.id]||0)+1; if(window.__saveUnread) window.__saveUnread(); } }catch(e){}
+      }catch(e){}
+    }
+    try{ bumpMeters(m.id,{interest:.5}); }catch(e){}
+    return 'pic:'+m.id;
+  }catch(e){ return 'err'; }
+}
+setInterval(()=>{ try{ dmPhotoTick(); }catch(e){} },65000);
+window.__forceDmPic=()=>{ window.__forceDmPic=true; return dmPhotoTick(); };
+/* ==== private tease ladder: she escalates when wanted, notices when ignored ====
+   stage 0 thinking-of-you text → 1 clothed tease pic → 2 suggestive pic →
+   3 nude (lust>=80 && love>=60, else a filthy promise) → cooldown.
+   Engagement is read from HER OWN stored entries, so it works from any scope:
+   his reply after her last tease = engaged (escalate faster); two unanswered
+   teases = seen-zoned (bratty callout, long cooldown). Sent photo kinds are
+   remembered so she never sends the same tease twice in a row. */
+async function teaseTick(){
+  try{
+    if(Date.now()-(window.__lastTease||0)<90*1000) return 'cooldown';
+    try{
+      let gate=true;
+      if(document.visibilityState!=='visible') gate=false;
+      const sb=(typeof snapBtn!=='undefined'&&snapBtn)?snapBtn:document.getElementById('snapBtn');
+      if(sb&&sb.disabled) gate=false;
+      if(Date.now()-(window.__lastDmPic||0)<4*60*1000) gate=false;
+      if(!gate&&!window.__forceTease) return 'gated';
+    }catch(e){}
+    if(window.__devMode&&!window.__forceTease) return 'dev';
+    const __fT=window.__forceTease===true; window.__forceTease=false;
+    if(!__fT&&Date.now()-(window.__lastAmbient||0)<600000) return 'ambient-cool';
+    try{ if(!__fT&&Date.now()-(window.__lastUserActive||0)<120000) return 'chatting'; }catch(e){}
+    const pool=(typeof roster!=='undefined'?roster:[]).filter(c=>c&&c.met!==false&&!c.muted&&!(c.sulkUntil&&Date.now()<c.sulkUntil)&&(c.interest||0)>=40&&bondNum(c)>=4);
+    if(!pool.length||Math.random()>0.45) return 'skip';
+    window.__lastTease=Date.now(); try{window.__lastAmbient=Date.now();}catch(e){}
+    pool.sort((a,b)=>((b.lust||0)+(b.interest||0)+Math.random()*30)-((a.lust||0)+(a.interest||0)+Math.random()*30));
+    const m=pool[0];
+    const gf=await girlFacts(m.id);
+    const wear=(gf.outfit_current||m.outfit||'').slice(0,200);
+    const room=((gf.env_desc||'')||'').slice(0,200)||'her room';
+    const I=Math.round(m.interest||0),U=Math.round(m.lust||0),L2=Math.round(m.love||0);
+    let st={stage:0,until:0,ignored:0,kinds:''};
+    try{ if(gf.tease&&typeof gf.tease==='object') st=Object.assign(st,gf.tease); }catch(e){}
+    if(st.until&&Date.now()<st.until) return 'cooling';
+    // engagement: his last message vs her last tease
+    let engaged=false, lastTeaseTs=0;
+    try{
+      const st0=cStore(m.id); const arr=(await st0.get('entries'))||[];
+      for(let i=arr.length-1;i>=0;i--){ const e=arr[i]; if(e&&(e.f==='tease')){ lastTeaseTs=e.ts||0; break; } }
+      if(lastTeaseTs){ for(let i=arr.length-1;i>=0;i--){ const e=arr[i]; if(e&&e.k==='u'&&(e.ts||0)>lastTeaseTs){ engaged=true; break; } if(e&&(e.f==='tease')) break; } }
+    }catch(e){}
+    if(lastTeaseTs&&!engaged) st.ignored=(st.ignored||0)+1; else if(engaged) st.ignored=0;
+    // seen-zoned twice: bratty callout, no pic, long cooldown
+    if(st.ignored>=2){
+      st.ignored=0; st.until=Date.now()+(2+Math.random()*2)*3600*1000;
+      let line='seen-zoned. twice. cute. don\u2019t touch that phone, I\u2019ll know.';
+      try{
+        const raw=await aiText('You are '+(m.name||'Her')+' ('+(m.tagline||'')+', voice: '+String(m.personality||'').slice(0,250)+'). Preston left your last two teases on seen. Send ONE short bratty callout text (under 25 words, his name is Preston) — annoyed, a little hurt under the bite, no pics, no begging. '+soulBrief(m)+' Only the text.');
+        if(String(raw).trim()) line=String(raw).slice(0,200);
+      }catch(e){}
+      await teaseDeliver(m,{text:line,f:'tease',fs:-1});
+      await teaseSaveState(m, Object.assign(st,{stage:Math.max(0,(st.stage||1)-1)}));
+      return 'callout:'+m.id;
+    }
+    const __tb=(typeof bondNum==='function')?bondNum(m):0;
+    const nudeOk=(U>=80&&L2>=60&&__tb>=6);
+    let stage=st.stage||0;
+    if(stage>=3&&!nudeOk) stage=2;
+    if(stage>=3&&__tb<6) stage=2;
+    if(stage>=2&&__tb<5) stage=1;
+    if(stage>3) stage=0;
+    const kinds=(st.kinds||'').split('|').filter(Boolean).slice(-6);
+    let act='teasing mirror selfie, lifting her top just enough to hint', kind='mirror-tease', cap='thinking about you. that\u2019s your fault.';
+    try{
+      const raw=await aiText('You are '+(m.name||'Her')+' ('+(m.tagline||'')+', voice: '+String(m.personality||'').slice(0,250)+'). Preston '+(engaged?'replied to your last tease — he wants it, escalate':'hasn\u2019t replied yet — tease harder, make him crack')+'. Stage '+stage+' of 0=text 1=clothed tease pic 2=suggestive pic 3=nude pic (only if really earned). Reply ONLY JSON {"activity":"one dense visual selfie line: exact pose + what she is doing + where, front-camera selfie or mirror selfie holding phone","kind":"2-3 word label, must differ from: '+kinds.join(', ')+'","caption":"flirty texting line under 25 words, his name is Preston"}. Outfit ground truth: '+wear+'. Recent memories: '+(((m.mem||[]).slice(-3).join(' / '))||'none')+'. '+soulBrief(m)+' Only the JSON.');
+      const o=JSON.parse(String(raw).slice(String(raw).indexOf('{'),String(raw).lastIndexOf('}')+1));
+      if(o&&o.activity) act=String(o.activity).slice(0,300);
+      if(o&&o.kind) kind=String(o.kind).slice(0,40);
+      if(o&&o.caption) cap=String(o.caption).slice(0,200);
+    }catch(e){}
+    if(stage===0){
+      await teaseDeliver(m,{text:cap,f:'tease',fs:0});
+      await teaseSaveState(m,{stage:1,until:Date.now()+(15+Math.random()*25)*60*1000,ignored:st.ignored,kinds:st.kinds});
+      return 'text:'+m.id;
+    }
+    let variant='CLOTHED', extra='fully clothed, casual, non-explicit, no nudity', res='512x768';
+    if(stage===1){ extra='flirty tease, '+CLOTHED_EXPLICIT_EXTRA; }
+    else if(stage===2){ extra='very suggestive tease, '+CLOTHED_EXPLICIT_EXTRA+', (bust pressed against fabric:1.3)'; }
+    else if(stage===3&&nudeOk){ variant='NUDE'; extra='fully nude, no clothes, no fabric, '+(m.id==='emi'||m.id==='mimi'?SPREAD_EMI:SPREAD); }
+    else if(stage===3){ await teaseDeliver(m,{text:cap,f:'tease',fs:3}); await teaseSaveState(m,{stage:2,until:Date.now()+(30+Math.random()*30)*60*1000,ignored:st.ignored,kinds:st.kinds}); return 'promise:'+m.id; }
+    const pr=photoPrompt(m,{variant,activity:'candid selfie of what she is doing right now, '+act,outfit:variant==='NUDE'?'':wear,setting:room,framing:'solo front-camera selfie, arm extended holding smartphone, looking into the lens, single girl only, no extra people, no duplicates',extra});
+    const neg=negFor(m,variant,{explicit:true,bottomless:variant==='NUDE'});
+    if(variant==='CLOTHED') neg+=', nude, naked, explicit, nudity';
+    let src=null, seed=0;
+    for(let t=0;t<2&&!src;t++){ try{ seed=Math.floor(Math.random()*2147483647); const r=await image(pr,{resolution:res,negativePrompt:neg,seed,guidanceScale:8}); const s=r&&(r.dataUrl||r); if(s&&typeof s==='string'&&s.indexOf('data:')===0) src=s; }catch(e){} }
+    if(!src){ await teaseSaveState(m,{stage,until:Date.now()+10*60*1000,ignored:st.ignored,kinds:st.kinds}); return 'genfail'; }
+    await teaseDeliver(m,{text:cap,src,meta:{prompt:pr,neg,res,seed,gs:8},f:'tease',fs:stage});
+    if(kind) kinds.push(kind);
+    const next=stage>=3?0:stage+1;
+    const cool=stage>=3?(4+Math.random()*4)*3600*1000:(engaged?(10+Math.random()*15)*60*1000:(25+Math.random()*30)*60*1000);
+    await teaseSaveState(m,{stage:next,until:Date.now()+cool,ignored:0,kinds:kinds.slice(-8).join('|')});
+    return 'tease'+stage+':'+m.id;
+  }catch(e){ return 'err'; }
+}
+async function teaseSaveState(m,st){
+  try{
+    const st0=cStore(m.id); const f=(await st0.get('facts'))||{};
+    f.tease={stage:st.stage||0,until:st.until||0,ignored:st.ignored||0,kinds:String(st.kinds||'').slice(0,300)};
+    await st0.set('facts',f);
+  }catch(e){}
+}
+async function teaseDeliver(m,msg){
+  try{
+    let live=false;
+    try{ live=(typeof activeId!=='undefined'&&activeId===m.id)&&!(typeof isGroupMode==='function'&&isGroupMode()); }catch(e){ live=(typeof activeId!=='undefined'&&activeId===m.id); }
+    if(live&&typeof addHerBubble==='function'){
+      addHerBubble(msg.text);
+      try{ chatHistory.push({role:'assistant',content:msg.text}); }catch(e){}
+      if(msg.src&&typeof addImageBubble==='function') addImageBubble(msg.src,msg.meta);
+      else if(msg.src&&typeof __stashImg==='function'){ try{ await __stashImg(m.id,m.id,msg.src,msg.meta?{p:msg.meta.prompt,n:msg.meta.neg,r:msg.meta.res,w:msg.meta.seed}:null); }catch(e){} }
+      try{
+        const st0=cStore(m.id); const arr=(await st0.get('entries'))||[];
+        // mirror live bubbles into stored entries so engagement tracking sees them
+        const has=arr.some(e=>e&&e.ts&&e.f==='tease'&&e.fs===msg.fs&&(Date.now()-e.ts)<120000);
+        if(!has){ arr.push({k:'k',t:msg.text,id:(typeof newMid==='function'?newMid():'m'+Date.now()),ts:Date.now(),who:m.id,f:'tease',fs:msg.fs}); if(msg.src) arr.push({k:'i',s:msg.src,who:m.id,id:(typeof newMid==='function'?newMid():'m'+Date.now()),ts:Date.now(),f:'tease',fs:msg.fs}); await st0.set('entries',arr.slice(-80)); try{ allChats[m.id]=arr.slice(-80); }catch(e){} }
+      }catch(e){}
+    } else if(typeof __stashImg==='function'){
+      if(msg.src){ try{ await __stashImg(m.id,m.id,msg.src,msg.meta?{p:msg.meta.prompt,n:msg.meta.neg,r:msg.meta.res,w:msg.meta.seed}:null); }catch(e){} }
+      try{
+        const st0=cStore(m.id); const arr=(await st0.get('entries'))||[];
+        arr.push({k:'k',t:msg.text,id:(typeof newMid==='function'?newMid():'m'+Date.now()),ts:Date.now(),who:m.id,f:'tease',fs:msg.fs});
+        if(msg.src) arr.push({k:'i',s:msg.src,who:m.id,id:(typeof newMid==='function'?newMid():'m'+Date.now()),ts:Date.now(),f:'tease',fs:msg.fs});
+        const slim=arr.slice(-80); await st0.set('entries',slim);
+        try{ allChats[m.id]=slim; }catch(e){}
+        try{ const box=(window.__unreadBox?window.__unreadBox():null); if(box){ box[m.id]=(box[m.id]||0)+(msg.src?2:1); if(window.__saveUnread) window.__saveUnread(); } }catch(e){}
+        try{ if(window.toast) window.toast(m.name+' sent you something \uD83D\uDCF8'); }catch(e){}
+      }catch(e){}
+    }
+  }catch(e){}
+}
+setInterval(()=>{ try{ teaseTick(); }catch(e){} },90000);
+window.__forceTease=()=>{ window.__forceTease=true; return teaseTick(); };
+/* ==== OVERHEARD: private girl-to-girl talks he can spy on (and burst into) ====
+   Only pairs who KNOW each other: AG-knows either way, or named in each other's
+   memories. 4-6 texting turns, then it waits for him to discover it. Bursting in
+   appends his line + both girls' caught reactions. Stored in deckStore 'g2g'. */
+let g2gConvos=[];
+try{ deckStore.get('g2g').then(g=>{ if(Array.isArray(g)){ g2gConvos=g.filter(c=>c&&c.id); try{ renderOverheard(); }catch(e){} } }); }catch(e){}
+function g2gSave(){ try{ if(g2gConvos.length>12) g2gConvos=g2gConvos.slice(-12); deckStore.set('g2g',g2gConvos); }catch(e){} }
+function g2gKnows(a,b){
+  try{
+    const G=(window.AG&&window.AG.girls)?window.AG.girls:null;
+    if(G){
+      const ka=((G[a.id]&&G[a.id].knows)||[]).join(' '), kb=((G[b.id]&&G[b.id].knows)||[]).join(' ');
+      if(ka.includes(b.id)||ka.includes(b.name)||kb.includes(a.id)||kb.includes(a.name)) return true;
+    }
+    const ma=((a.mem||[]).join(' ')||'').toLowerCase(), mb=((b.mem||[]).join(' ')||'').toLowerCase();
+    if(ma.includes(b.name.toLowerCase())||mb.includes(a.name.toLowerCase())) return true;
+  }catch(e){}
+  return false;
+}
+function g2gPair(){
+  try{
+    const pool=(typeof roster!=='undefined'?roster:[]).filter(c=>c&&c.met!==false&&!c.muted);
+    const pairs=[];
+    for(let i=0;i<pool.length;i++) for(let j=i+1;j<pool.length;j++){ if(g2gKnows(pool[i],pool[j])) pairs.push([pool[i],pool[j]]); }
+    if(!pairs.length) return null;
+    return pairs[Math.floor(Math.random()*pairs.length)];
+  }catch(e){ return null; }
+}
+async function g2gTick(){
+  try{
+    if(window.__devMode&&!window.__forceG2g) return 'dev';
+    if(Date.now()-(window.__lastG2g||0)<13*60*1000) return 'cooldown';
+    window.__forceG2g=false;
+    const pr=g2gPair();
+    if(!pr||Math.random()>0.55) return 'skip';
+    window.__lastG2g=Date.now();
+    const [a,b]=pr;
+    const __lowB=(typeof bondNum==='function')?(bondNum(a)<=1&&bondNum(b)<=1):false;
+    const topicRaw=await aiText('Two adult anime women texting privately (Preston is NOT here, never narrate him present). '+a.name+' ('+(a.tagline||'')+', voice: '+String(a.personality||'').slice(0,250)+') and '+b.name+' ('+(b.tagline||'')+', voice: '+String(b.personality||'').slice(0,250)+'). What do they talk about right now? '+(__lowB?'Their own lives, plans, gossip, each other — Preston is just some new guy they barely know, background at most, never the focus':'Preston is the man they both want')+'; memories A: '+(((a.mem||[]).slice(-3).join(' / '))||'none')+'. memories B: '+(((b.mem||[]).slice(-3).join(' / '))||'none')+'. Inner heads — A ('+a.name+'): '+soulBrief(a)+' B ('+b.name+'): '+soulBrief(b)+'. Reply ONLY JSON {"topic":"one line, e.g. comparing what he did last night, planning something for him, catty gossip","starter":"a or b"}. Only the JSON.');
+    let topic='what he did last night', starter=a.id;
+    try{ const o=JSON.parse(String(topicRaw).slice(String(topicRaw).indexOf('{'),String(topicRaw).lastIndexOf('}')+1)); if(o&&o.topic) topic=String(o.topic).slice(0,140); if(o&&o.starter===b.id) starter=b.id; }catch(e){}
+    const convo={id:'g2g'+Date.now().toString(36),a:a.id,b:b.id,topic,entries:[],ts:Date.now(),burst:0};
+    const byId={}; byId[a.id]=a; byId[b.id]=b;
+    let turn=starter, transcript='';
+    const nTurns=4+Math.floor(Math.random()*3);
+    for(let t=0;t<nTurns;t++){
+      const sp=byId[turn], other=byId[turn===a.id?b.id:a.id];
+      let line='';
+      try{
+        const raw=await aiText('You are '+sp.name+' ('+(sp.tagline||'')+', voice: '+String(sp.personality||'').slice(0,250)+') privately texting '+other.name+'. Topic: '+topic+'. Preston is YOUR man (hers too, rival-or-friend energy, stay in character). '+soulBrief(sp)+' Private girl-talk: honest, catty, filthy-cute, specific — use one real memory below if it fits. Transcript so far:\n'+(transcript||'(you start)')+'\n'+sp.name+': (one texting line, under 40 words, his name is Preston, never speak for '+other.name+', never narrate Preston present)');
+        line=String(raw).replace(/\n+/g,' ').trim().slice(0,280);

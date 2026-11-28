@@ -1,0 +1,500 @@
+}
+async function openDossier(){
+  let list=[];
+  try{ if(isGroupMode()){ const g=groupById(activeGroupId); list=membersOf(g); } else { const c=activeChar(); if(c) list=[c]; } }catch(e){}
+  if(!list.length){ try{ toast('open her chat first'); }catch(e){} return; }
+  const rows=document.getElementById('dossierRows'); if(!rows) return; rows.innerHTML='';
+  for(const c of list){ try{ rows.appendChild(await dossierSection(c)); }catch(e){} }
+  try{ document.getElementById('dossierTitle').textContent=list.length>1?('Dossier — '+list.map(c=>c.name).join(', ')):(list[0].name+' — dossier'); }catch(e){}
+  document.getElementById('dossierSheet').classList.add('on');
+}
+async function runDebrief(id,sec){
+  const c=roster.find(x=>x.id===id); if(!c) return;
+  const box=sec.querySelector('.ddebrief'), btn=sec.querySelector('[data-a="debrief"]');
+  if(btn){ btn.disabled=true; btn.textContent='reading her…'; }
+  if(box){ box.hidden=false; box.innerHTML='<span class="typing"><span class="tdot"></span><span class="tdot"></span><span class="tdot"></span></span>'; }
+  try{
+    const es=dossierEntries(c).slice(-60);
+    const tr=es.map(e=>{ let t=''; try{ t=new Date(e.ts).toLocaleString([],{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}); }catch(_){}
+      if(e.k==='i') return '['+t+' '+(e.who===c.id?c.name:'Preston')+' sent a photo]';
+      return '['+t+' '+(e.k==='u'?'Preston':c.name)+'] '+String(e.t||'').slice(0,400); }).join('\n').slice(-6000);
+    let B=0; try{ B=(typeof bondNum==='function')?bondNum(c):0; }catch(e){}
+    let facts=null; try{ facts=await cStore(c.id).get('facts'); }catch(e){}
+    const sys='You are a brutally honest dating coach doing a case review. Girl: '+c.name+' ('+(c.tagline||'')+'). Personality brief: '+String(c.personality||'').slice(0,300)+'\nHard numbers: love '+Math.round(c.love||0)+'/100, lust '+Math.round(c.lust||0)+'/100, interest '+Math.round(c.interest||0)+'/100, bond '+B+'/10. Bond rises only when she genuinely feels closer to him (each stretch gets an honest read, capped daily) — hot scenes alone never raise it.\nStats: '+es.length+' recent msgs, orbs '+(c.orbs||0)+', exclusive '+!!c.exclusive+', grudge '+String(c.grudge||'none').slice(0,120)+'\nWhat she remembers about him: '+(((c.mem||[]).join(' / '))||'nothing yet').slice(0,1200)+'\nHer private diary (latest): '+(((c.diary||[]).slice(-4).join(' / '))||'nothing yet').slice(0,1200)+'\nWhat she wants: '+String(c.want||'—').slice(0,200)+'. What she clocked about him: '+(((c.he||[]).join(' / '))||'—').slice(0,600)+'. Scene facts: '+JSON.stringify(facts||{}).slice(0,500)+'\nTranscript (latest, trimmed):\n'+tr+'\nFirst establish from the transcript who turned things sexual or escalated first — her, him, or mutual — and never default to blaming him. Give: 1) what actually happened in one line, 2) what HE did that worked, 3) what went wrong / what he misread about her, 4) where she stands now — attached, just horny, or checked out, 5) ONE concrete next move. Blunt, specific, no purple prose, under 250 words. Address him as "you".';
+    const out=await aiText(sys);
+    if(box) box.textContent=String(out||'').trim().slice(0,3000)||'No read yet — talk to her more first.';
+  }catch(e){ if(box) box.textContent='Could not get a read right now. Try again in a bit.'; }
+  if(btn){ btn.disabled=false; btn.textContent='↻ re-read her'; }
+}
+try{
+  document.getElementById('dossierBtn').onclick=()=>{ try{openDossier();}catch(e){} };
+  document.getElementById('dossierClose').onclick=()=>document.getElementById('dossierSheet').classList.remove('on');
+  document.getElementById('dossierSheet').onclick=e=>{ if(e.target.id==='dossierSheet') e.target.classList.remove('on'); };
+}catch(e){}
+  try{ document.getElementById('giftClose').onclick=()=>document.getElementById('giftSheet').classList.remove('on'); }catch(e){}
+  try{ document.getElementById('giftSheet').onclick=e=>{ if(e.target.id==='giftSheet') e.target.classList.remove('on'); }; }catch(e){}
+  try{ document.getElementById('dateClose').onclick=()=>document.getElementById('dateSheet').classList.remove('on'); }catch(e){}
+  try{ document.getElementById('dateSheet').onclick=e=>{ if(e.target.id==='dateSheet') e.target.classList.remove('on'); }; }catch(e){}
+  try{ document.getElementById('giftBtn').onclick=()=>{ try{openGiftSheet();}catch(e){} }; }catch(e){}
+  try{ document.getElementById('dateBtn').onclick=()=>{ try{openDates();}catch(e){} }; }catch(e){}
+}catch(e){}
+try{
+  const _rdM3=renderDeck;
+  renderDeck=function(){ const r=_rdM3(); try{renderMeterBars();}catch(e){} return r; };
+  renderMeterBars();
+}catch(e){}
+try{
+  const _sendM=send;
+  send=async function(){ const r=await _sendM(); try{ const c=activeChar(); if(c&&!isGroupMode()) bumpMeters(c.id,{interest:1,love:.8,lust:.8}); }catch(e){} return r; };
+}catch(e){}
+try{
+  const _sgM=sendGroup;
+  sendGroup=async function(){ const r=await _sgM(); try{ const g=groupById(activeGroupId); (membersOf(g)||[]).forEach(m=>bumpMeters(m.id,{interest:.4,love:.25})); }catch(e){} return r; };
+}catch(e){}
+try{
+  const _sgTB=sendGroup;
+  sendGroup=async function(){
+    try{
+      const t=inp.value.trim();
+      const g=groupById(activeGroupId);
+      if(t&&t.length<28&&!activeReply&&g&&Math.random()<0.25){
+        const ms=(membersOf(g)||[]).filter(m=>!m.muted);
+        if(ms.length){
+          inp.value=''; autoresize();
+          const row=addUserBubble(t); chatHistory.push({role:'user',content:t});
+          const e=findEntry(row.dataset.mid); const emoji=tapbackFor(t);
+          if(e) e.ru=emoji;
+          queueSave(); paintReacts();
+          try{ bumpMeters(ms[0].id,{love:.4}); speakText('*reacts '+emoji); }catch(_){}
+          return;
+        }
+      }
+    }catch(e){}
+    return _sgTB();
+  };
+}catch(e){}
+try{
+  document.getElementById('edgeBtn').addEventListener('click',()=>{ try{ const c=activeChar(); if(c) setTimeout(()=>bumpMeters(c.id,{love:1,lust:2}),0); }catch(e){} });
+  document.getElementById('allowBtn').addEventListener('click',()=>{ try{ const c=activeChar(); if(c) setTimeout(()=>bumpMeters(c.id,{love:2,lust:1}),0); }catch(e){} });
+}catch(e){}
+try{
+  const _ptM=pingToast;
+  pingToast=function(c,text){ try{ bumpMeters(c.id,{interest:.4}); }catch(e){} return _ptM(c,text); };
+}catch(e){}
+showThread=function(){
+  const _st=window.__showThread;
+  try{ _st(); }catch(e){}
+  try{ if(!isGroupMode()){ const r=document.getElementById('groupSnapRow'); if(r) r.hidden=true; } }catch(e){}
+};
+enterChat=async function(id){ const r=await _ecInbox(id); try{showThread();}catch(e){} return r; };
+enterGroup=async function(id){ const r=await _egInbox(id); try{showThread();}catch(e){} return r; };
+try{ window.__enterChat=enterChat; window.__enterGroup=enterGroup; }catch(e){}
+try{
+  const _snapM=snap;
+  snap=async function(){
+    let gid=null;
+    try{
+      if(window.__forceMember) gid=window.__forceMember.id;
+      else if(isGroupMode()){ const g=groupById(activeGroupId); const ms=membersOf(g); const sel=document.getElementById('snapWho'); const v=sel?sel.value:null; gid=(ms.find(m=>m.id===v)||ms[0]||{}).id||null; }
+      else gid=activeId;
+    }catch(e){}
+    const r=await _snapM();
+    try{ if(gid) bumpMeters(gid,{lust:.8,interest:.5}); }catch(e){}
+    return r;
+  };
+}catch(e){}
+try{
+  inp.addEventListener('keydown',e=>{ if(e.key==='Enter'&&!e.shiftKey&&isGroupMode()){ e.preventDefault(); e.stopImmediatePropagation(); sendGroup(); } },true);
+}catch(e){}
+try{
+  document.querySelectorAll('#quick button').forEach(b=>{ const f=b.onclick; b.onclick=()=>{ try{ if(isGroupMode()){ inp.value=b.dataset.q; autoresize(); return sendGroup(); } }catch(e){} return f(); }; });
+  document.querySelectorAll('#outfitbar button').forEach(b=>{ const f=b.onclick; b.onclick=async()=>{ try{ if(isGroupMode()){ const line=(typeof OUTFIT_LINES!=='undefined'?OUTFIT_LINES[b.dataset.o]:null)||b.dataset.o; inp.value=line; autoresize(); await sendGroup(); return snap(); } }catch(e){} return f(); }; });
+  document.querySelectorAll('#locbar button').forEach(b=>{ const f=b.onclick; b.onclick=async()=>{ try{ if(isGroupMode()){ const line=(typeof LOC_LINES!=='undefined'?LOC_LINES[b.dataset.l]:null)||b.dataset.l; inp.value=line; autoresize(); await sendGroup(); return snap(); } }catch(e){} return f(); }; });
+}catch(e){}
+try{ renderInbox(); }catch(e){}
+window.__pingNow=()=>pingTick();
+window.__pingToast=pingToast;
+/* ==== ambient network life: feed posts, shade, girl-made beef chats ==== */
+function netActiveOk(){
+  try{
+    if(document.visibilityState!=='visible'&&Date.now()-lastActivity>90000) return false;
+    if(Date.now()-lastActivity>5*60*1000) return false;
+    if(sendBtn.disabled||snapBtn.disabled) return false;
+    return true;
+  }catch(e){ return false; }
+}
+async function girlFeedPost(m,shadeTarget){
+  const others=roster.filter(c=>c.id!==m.id).map(c=>c.name).join(', ');
+  const I=Math.round(m.interest||30),U=Math.round(m.lust||30),L=Math.round(m.love||30);
+  const __fb0=(typeof bondNum==='function'?bondNum(m):0);
+  const showoffPost=(U>=70&&__fb0>=5)&&(Date.now()-((typeof m._lastShow==='number'?m._lastShow:0))>45*60*1000);
+  let brief;
+  if(shadeTarget){
+    brief='Post SHADE only if '+shadeTarget+' is in your memories below — veiled and catty, one real detail, no invented nights, no explicit details, no photos of anyone but you. Under 30 words.';
+  } else if(I<30){
+    brief='Post about YOUR own life (your day, your look, your mood) — he is barely on your mind. Confident, a little distant, make HIM chase. Under 30 words. Do NOT be thirsty. Make it visual: an activity or moment worth snapping a pic of.';
+  } else if(showoffPost){
+    brief='Thirst-trap SHOW-OFF post: you are feeling yourself tonight and the attached photo is REVEALING (skimpy bikini, lingerie set, just a towel, tight crop top — body on display, tasteful, no full nudity, this is a public feed). Caption: braggy and thirsty, aimed at Preston AND at making the other girls jealous that he wants YOU. Under 30 words. Make it visual: the body you are showing off right now.';
+  } else if(U>=60&&__fb0>=4){
+    brief='Thirst-post about HIM (call him Preston sometimes, or mine/he/him): what you want from him tonight, filthy-cute, possessive of him in front of the other girls. Under 30 words. Make it visual: what you are doing right now while thinking it.';
+  } else {
+    brief='Post something cute/flirty that gets his attention without begging — your day plus a hook he would reply to. Other girls are watching. Under 30 words. Make it visual: an activity or look worth snapping.';
+  }
+  try{ const __lead=[...roster].sort((a,b)=>(b.orbs||0)-(a.orbs||0))[0]; if(__lead&&__lead.id===m.id&&(m.orbs||0)>=2) brief+=' Flex your '+m.orbs+' orbs — he finished for YOU those times, remind the others.'; }catch(e){}
+  const sys='You are '+m.name+' ('+(m.tagline||'')+', voice: '+(m.personality||'').slice(0,300)+'). You are posting to the PUBLIC network feed (him + rivals: '+others+' all see it). A candid photo of YOUR current moment attaches to the post, so write something visual and true. RULES: never quote DMs, never describe private snaps, keep explicit details private. Your real memories: '+(((m.mem||[]).slice(-3).join(' / '))||'none')+'. Do NOT claim you were with him, that he did something, or shade a girl unless it is in your memories or he told you. '+(brief)+' '+soulBrief(m)+(function(){ try{ const lp=(typeof allFeed!=='undefined'?allFeed:[]).filter(p=>p&&p.who===m.id).slice(-1)[0]; if(lp&&lp.text) return ' Your last post said: "'+String(lp.text).slice(0,120)+'" — this one must be a DIFFERENT moment with DIFFERENT words, never a repost.'; }catch(e){} return ''; })()+' Only the post, no quotes.';
+  const out=await aiText(sys);
+  const post={id:'p'+Date.now().toString(36)+m.id,who:m.id,text:String(out).slice(0,240),ts:Date.now(),likes:[],comments:[],showoff:showoffPost};
+  allFeed.push(post); touchFeed();
+  try{ if(typeof soulJournal==='function') soulJournal(m,'Posted publicly: '+String(post.text||'').slice(0,120)); }catch(e){}
+  if(showoffPost){ m._lastShow=Date.now(); }
+  try{ if((I>=60||showoffPost)&&window.bondGain) window.bondGain(m.id,1); }catch(e){}
+  try{
+    const L2=(typeof m.love==='number'?m.love:1);
+    if(m.met!==false&&L2>=20){
+      const lustU=Math.round(m.lust||30);
+      const spicy=(L2>=60&&lustU>=60&&__fb0>=4)||showoffPost;
+      const gf=await girlFacts(m.id);
+      const wear=((gf.outfit_current||m.outfit)||'').slice(0,200);
+      const room=((gf.env_desc||'')||'').slice(0,200);
+      const act=String(post.text||'').slice(0,140);
+      const __fits=['tiny bikini','lacy lingerie set','just an oversized towel slipping off','tight crop top and short shorts','silk slip nightdress','sports bra and tiny gym shorts'];
+      const __fitPool=__fits.filter(f=>f!==m._lastShowFit);
+      const __fitPick=__fitPool[Math.floor(Math.random()*__fitPool.length)]||__fits[0];
+      m._lastShowFit=__fitPick;
+      const showOutfit='skimpy show-off outfit she picked tonight ('+__fitPick+' — body on display, a FRESH look, different from her last show-off post)';
+      const __frames=['solo front-camera selfie, arm extended holding smartphone, looking into the lens','mirror selfie, phone held up, full-body mirror reflection','phone propped on furniture, hands-free candid pose, glancing back at the lens','close crop selfie, face and shoulders, playful expression'];
+      const __framePool=__frames.filter(f=>f!==m._lastShowFrame);
+      const __showFrame=__framePool[Math.floor(Math.random()*__framePool.length)]||__frames[0];
+      m._lastShowFrame=__showFrame;
+      const pr=photoPrompt(m,{variant:'CLOTHED',activity:(showoffPost?'revealing thirst-trap instagram photo, body on display, teasing the lens, ':'candid instagram photo of what she is doing right now, ')+act,outfit:showoffPost?showOutfit:wear,setting:room||'her room',framing:(showoffPost&&typeof __showFrame==='string'?__showFrame+', single girl only, no extra people, no duplicates':'solo front-camera selfie, arm extended holding smartphone, looking into the lens, single girl only, no extra people, no duplicates'),extra:showoffPost?(CLOTHED_EXPLICIT_EXTRA+', (skintight, body on display:1.2)'):(spicy?CLOTHED_EXPLICIT_EXTRA:'fully clothed, casual, non-explicit, no nudity')});
+      const neg=negFor(m,'CLOTHED',{explicit:spicy})+(spicy?'':', nude, naked, explicit, nudity, nipples, crotch');
+      let src=null;
+      for(let t=0;t<2&&!src;t++){ try{ const r=await image(pr,{resolution:'512x512',negativePrompt:neg,seed:Math.floor(Math.random()*2147483647),guidanceScale:8}); const s=r&&(r.dataUrl||r); if(s&&typeof s==='string'&&s.indexOf('data:')===0) src=s; }catch(e){} }
+      if(src){ post.img=src; touchFeed(); }
+    }
+  }catch(e){}
+  return post;
+}
+async function feedTick(){
+  try{
+    if(!window.__forceFeed){
+      try{
+        if(sendBtn.disabled||snapBtn.disabled) return 'gated';
+        if(document.visibilityState!=='visible'&&Date.now()-lastActivity>20*60*1000) return 'idle';
+      }catch(e){}
+    }
+    if(window.__devMode&&!window.__forceFeed) return 'dev';
+    window.__forceFeed=false;
+    if(Date.now()-(window.__lastFeed||0)<180000) return 'cooldown';
+    const pool=roster.filter(c=>c.met!==false&&!c.muted&&(c.love||1)>=20&&!(c.sulkUntil&&Date.now()<c.sulkUntil)&&(Date.now()-((window.__lastPostBy||{})[c.id]||0)>30*60*1000));
+    if(!pool.length) return 'nobody';
+    if(Math.random()>0.6) return 'skip';
+    window.__lastFeed=Date.now();
+    pool.sort((a,b)=>((b.interest||0)+Math.random()*40)-((a.interest||0)+Math.random()*40));
+    const m=pool[0];
+    window.__lastPostBy=window.__lastPostBy||{}; window.__lastPostBy[m.id]=Date.now();
+    try{ if(typeof isGroupMode==='function'&&isGroupMode()){ const __gg=(typeof groupById==='function'?groupById(activeGroupId):null); if(__gg&&(__gg.memberIds||[]).includes(m.id)) return 'with-him'; } else if(typeof activeId!=='undefined'&&m.id===activeId) return 'with-him'; }catch(e){}
+    let shadeTarget=null;
+    if(Math.random()<0.22){
+      const __memNames=(((m.mem||[]).join(' ')||'').toLowerCase());
+      const rivals=roster.filter(c=>c.id!==m.id&&c.met!==false&&!c.muted&&__memNames.includes(c.name.toLowerCase()));
+      if(rivals.length) shadeTarget=rivals[Math.floor(Math.random()*rivals.length)].name;
+    }
+    const post=await girlFeedPost(m,shadeTarget);
+    try{ bumpMeters(m.id,{interest:.4}); }catch(e){}
+    const mentioned=roster.filter(c=>c.id!==m.id&&c.met!==false&&!c.muted&&!(c.sulkUntil&&Date.now()<c.sulkUntil)&&post.text.toLowerCase().includes(c.name.toLowerCase()));
+    if(post&&post.showoff){
+      const rivals=roster.filter(c=>c.id!==m.id&&c.met!==false&&!c.muted&&!(c.sulkUntil&&Date.now()<c.sulkUntil));
+      if(rivals.length){
+        rivals.sort((a,b)=>(b.lust||0)-(a.lust||0));
+        await girlCommentOn(post.id,rivals[0].id,'She just posted a REVEALING thirst-trap photo for Preston ("'+post.text.slice(0,120)+'"). You are jealous and NOT hiding it — her body, his eyes on her, your reaction. Catty, possessive, short.');
+        if(rivals[1]&&Math.random()<0.5) await girlCommentOn(post.id,rivals[1].id,'React to her thirst-trap post — thirsty, jealous, or teaming up against her. Short and spicy.');
+      }
+    } else if(mentioned.length&&Math.random()<0.8){
+      await girlCommentOn(post.id,mentioned[0].id,'She just posted about YOU publicly: "'+post.text.slice(0,120)+'". Clap back — flirty beef, defend yourself, fight cute over him.');
+      if(Math.random()<0.4) await girlCommentOn(post.id,m.id,'She clapped back at your post. Finish her — but keep it bratty-cute, and remind everyone who he wants.');
+    } else if(Math.random()<0.5){
+      const others=roster.filter(c=>c.id!==m.id&&c.met!==false&&!c.muted&&!(c.sulkUntil&&Date.now()<c.sulkUntil));
+      if(others.length){
+        others.sort((a,b)=>(b.interest||0)-(a.interest||0));
+        await girlCommentOn(post.id,others[0].id,'React to her post publicly — thirsty, jealous, or teaming up against her. Short and spicy.');
+      }
+    }
+    return 'post:'+m.id;
+  }catch(e){ return 'err'; }
+}
+function beefInviteToast(a,b,g){
+  try{
+    const w=document.getElementById('toastWrap'); if(!w) return;
+    const d=document.createElement('div'); d.className='pingtoast';
+    d.innerHTML='<img><div><b></b><span></span></div>';
+    d.querySelector('img').src=a.pfp||'src/images/kayla-pfp.jpg';
+    d.querySelector('b').textContent=a.name+' & '+b.name+' started “'+g.name+'”';
+    d.querySelector('span').textContent='they need YOU in there. tap to jump in 👀';
+    d.onclick=()=>{ try{d.remove();}catch(e){} try{enterGroup(g.id);}catch(e){} };
+    w.appendChild(d);
+    setTimeout(()=>{ try{d.remove();}catch(e){} },12000);
+  }catch(e){}
+}
+async function beefTick(){
+  try{
+    if(!netActiveOk()&&!window.__forceBeef) return 'gated';
+    if(window.__devMode&&!window.__forceBeef) return 'dev';
+    window.__forceBeef=false;
+    if(Date.now()-(window.__lastBeef||0)<20*60*1000) return 'cooldown';
+    if(groups.length>=8) return 'maxed';
+    const pool=roster.filter(c=>c.met!==false&&!c.muted&&!(c.sulkUntil&&Date.now()<c.sulkUntil));
+    if(pool.length<2) return 'need2';
+    if(Math.random()>0.5) return 'skip';
+    const knowsPair=(a,b)=>{ try{
+      const G=(window.AG&&window.AG.girls)?window.AG.girls:null; if(!G) return false;
+      const ka=(G[a.id]&&Array.isArray(G[a.id].knows))?G[a.id].knows.join(' '):'';
+      const kb=(G[b.id]&&Array.isArray(G[b.id].knows))?G[b.id].knows.join(' '):'';
+      return ka.includes(b.id)||ka.includes(b.name)||kb.includes(a.id)||kb.includes(a.name);
+    }catch(e){ return false; } };
+    const pairs=[];
+    for(let i=0;i<pool.length;i++) for(let j=i+1;j<pool.length;j++){ try{ if(knowsPair(pool[i],pool[j])) pairs.push([pool[i],pool[j]]); }catch(e){} }
+    if(!pairs.length) return 'strangers';
+    if(Math.random()<0.55) return 'skip-quiet';
+    const pb=pairs[Math.floor(Math.random()*pairs.length)]; const a=pb[0],b=pb[1];
+    if(((a.love||0)+(a.lust||0)+(b.love||0)+(b.lust||0))/4<38) return 'calm';
+    window.__lastBeef=Date.now();
+    const names=['settle this 😤','he picks tonight','no sharing','fight night','mine, not yours','decide. NOW'];
+    const gname=names[Math.floor(Math.random()*names.length)];
+    const id='gr'+Date.now().toString(36);
+    groups.push({id,name:a.name+' vs '+b.name+' — '+gname,memberIds:[a.id,b.id],createdAt:Date.now(),startedBy:a.id});
+    allChats['g_'+id]=[];
+    await persistGroups(); renderGroups(); renderInbox();
+    unread['g_'+id]=2; saveUnread(); try{paintDots();}catch(e){} try{renderDeck();}catch(e){} try{renderGroups();}catch(e){}
+    const gg=groupById(id);
+    const lines=[
+      {m:a,hint:'You started this group to fight '+b.name+' over him. Open by staking your claim — quote one REAL memory of you and him as proof she is delusional'+(function(){ try{ const ms=((a.mem||[]).slice(-3)); return ms.length?': '+ms.map(s=>'"'+String(s).slice(0,120)+'"').join(' / '):'.'; }catch(e){ return '.'; } })()},
+      {m:b,hint:a.name+' just staked her claim on him in front of you. Shut her DOWN with a REAL memory of you and him that proves he wants you more'+(function(){ try{ const ms=((b.mem||[]).slice(-3)); return ms.length?': '+ms.map(s=>'"'+String(s).slice(0,120)+'"').join(' / '):' — one filthy-cute line.'; }catch(e){ return ' — one filthy-cute line.'; } })()+' Never generic jealousy — real ammo only.'}
+    ];
+    const entries=[];
+    for(const ln of lines){
+      try{
+        const sys=groupSystem(ln.m,[a,b]);
+        const out=await aiText(sys+'\n\nBeef context: '+ln.hint+'\n\n'+ln.m.name+':');
+        entries.push({k:'k',who:ln.m.id,t:String(out).slice(0,300),id:(typeof newMid==='function'?newMid():'m'+Date.now()+ln.m.id),ts:Date.now()});
+      }catch(e){}
+    }
+    try{ await gStore(id).set('entries',entries.slice(-80)); }catch(e){}
+    allChats['g_'+id]=entries.slice(-80);
+    try{
+      const loser=((a.love||0)+(a.lust||0))<=((b.love||0)+(b.lust||0))?a:b;
+      loser.sulkUntil=Date.now()+(4+Math.floor(Math.random()*5))*3600000;
+      loser.sulkBoost=true;
+      try{ bumpMeters(loser.id,{interest:-6,lust:-4}); }catch(e){}
+      try{ saveDeck(); }catch(e){}
+    }catch(e){}
+    try{ touchConv('g_'+id); }catch(e){}
+    try{ renderGroups(); }catch(e){} try{ renderInbox(); }catch(e){}
+    beefInviteToast(a,b,gg);
+    return 'beef:'+id;
+  }catch(e){ return 'err'; }
+}
+setInterval(feedTick,240000);
+setInterval(beefTick,540000);
+window.__forceFeedRun=()=>{ window.__forceFeed=true; return feedTick(); };
+window.__forceBeefRun=()=>{ window.__forceBeef=true; return beefTick(); };
+/* ==== batch 2a: reply, jump, reactions, regen, ctx sheet ==== */
+function rowInfo(row){
+  try{
+    return {mid:row.dataset.mid||null,who:row.dataset.who||null,name:row.dataset.name||'them',text:row.dataset.text||''};
+  }catch(e){ return {mid:null}; }
+}
+function jumpTo(mid){
+  try{
+    if(!mid) return;
+    const row=log.querySelector('.row[data-mid="'+mid+'"]');
+    if(!row){ toast('message not on screen'); return; }
+    row.scrollIntoView({block:'center',behavior:'smooth'});
+    row.classList.remove('flash'); void row.offsetWidth; row.classList.add('flash');
+    setTimeout(()=>{ try{row.classList.remove('flash');}catch(e){} },1500);
+  }catch(e){}
+}
+document.addEventListener('click',e=>{
+  try{
+    const q=e.target.closest?e.target.closest('[data-jump]'):null;
+    if(q&&q.dataset.jump){ e.preventDefault(); jumpTo(q.dataset.jump); }
+  }catch(_){}
+});
+function setReply(row){
+  try{
+    const info=rowInfo(row); if(!info.mid) return;
+    const e=findEntry(info.mid);
+    activeReply={mid:info.mid,who:info.who,name:e?entryName(e):info.name,text:e?(e.k==='i'?'📸 snap':String(e.t||'').slice(0,160)):info.text};
+    const rc=document.getElementById('replyChip');
+    rc.querySelector('span').textContent=activeReply.name+': '+activeReply.text.slice(0,80);
+    rc.hidden=false;
+    document.getElementById('inp').focus();
+  }catch(e){}
+}
+try{ document.getElementById('replyChip').querySelector('button').onclick=()=>clearReply(); }catch(e){}
+function paintReacts(){
+  try{
+    log.querySelectorAll('.row[data-mid]').forEach(row=>{
+      const box=row.querySelector('.reacts'); if(!box) return;
+      const e=findEntry(row.dataset.mid); if(!e){ box.innerHTML=''; return; }
+      let h='';
+      if(e.ru) h+='<i>'+esc(e.ru)+'</i>';
+      if(e.rh) h+='<i>'+esc(e.rh)+'</i>';
+      if(box.innerHTML!==h) box.innerHTML=h;
+    });
+  }catch(e){}
+}
+let _paintT=null;
+try{ new MutationObserver(()=>{ clearTimeout(_paintT); _paintT=setTimeout(()=>{ try{paintReacts();}catch(e){} },250); }).observe(document.getElementById('log'),{childList:true,subtree:true}); }catch(e){}
+function reactEmoji(mid,emoji){
+  try{
+    const e=findEntry(mid); if(!e) return;
+    if(e.k==='u'){ e.ru=(e.ru===emoji?null:emoji); }
+    else { e.rh=(e.rh===emoji?null:emoji); }
+    try{ bumpMeters(e.who||activeId,{love:.4}); }catch(_){}
+    queueSave(); paintReacts(); renderInbox();
+  }catch(e){}
+}
+function tapbackFor(t){
+  const s=String(t||'').toLowerCase();
+  if(/lol|haha|😂|lmao|funny/.test(s)) return '😂';
+  if(/love|❤|like you|miss you/.test(s)) return '❤️';
+  if(/thank|thx|please|pls/.test(s)) return '🥹';
+  if(/wow|damn|omg|no way/.test(s)) return '😮';
+  if(/hot|sexy|beautiful|gorgeous|pretty/.test(s)) return '🔥';
+  return ['❤️','👍','✨','🥹'][Math.floor(Math.random()*4)];
+}
+const _sendTB=send;
+send=async function(){
+  try{
+    const t=inp.value.trim();
+    if(t&&t.length<28&&!activeReply&&Math.random()<0.3){
+      const c=activeChar(); if(!c) return _sendTB();
+      inp.value=''; autoresize();
+      const row=addUserBubble(t); chatHistory.push({role:'user',content:t});
+      const e=findEntry(row.dataset.mid); const emoji=tapbackFor(t);
+      if(e) e.ru=emoji;
+      queueSave(); paintReacts();
+      try{ bumpMeters(c.id,{love:.4}); speakText(emoji==='😂'?'*laughs*':('*reacts '+emoji)); }catch(_){}
+      try{ await learnFacts(); }catch(_){}
+      agCtx(t);
+      return;
+    }
+  }catch(e){}
+  return _sendTB();
+};
+function openCtx(row){
+  try{
+    const box=document.getElementById('ctxBox'); if(!box||!row) return;
+    const info=rowInfo(row); const e=findEntry(info.mid);
+    const isHer=row.classList.contains('her');
+    const isLatestHer=(()=>{ try{ const hers=[...log.querySelectorAll('.row.her')]; return hers.length&&hers[hers.length-1]===row; }catch(_){ return false; } })();
+    box.innerHTML='';
+    const reactRow=document.createElement('div'); reactRow.className='ctxreact';
+    ['❤️','😂','😮','🥹','👍','✨'].forEach(em=>{
+      const b=document.createElement('button'); b.textContent=em;
+      b.onclick=()=>{ reactEmoji(info.mid,em); closeCtx(); };
+      reactRow.appendChild(b);
+    });
+    box.appendChild(reactRow);
+    const mk=(label,fn)=>{ const b=document.createElement('button'); b.textContent=label; b.onclick=()=>{ try{fn();}catch(_){} }; box.appendChild(b); return b; };
+    mk('↩ Reply',()=>{ setReply(row); closeCtx(); });
+    mk('⧉ Copy text',()=>{ try{ navigator.clipboard.writeText(e?(e.k==='i'?'[snap]':(e.t||'')):info.text); toast('copied'); }catch(_){ toast('copy failed'); } closeCtx(); });
+    if(isHer&&isLatestHer) mk('↻ Regenerate her reply',()=>{ closeCtx(); regenHer(info.mid); });
+    const nver=(e&&e.versions&&e.versions.length>1)?e.versions.length-1:((e&&e.alts&&e.alts.length)?e.alts.length:0);
+    if(nver) mk('‹ › Cycle '+nver+' other version'+(nver===1?'':'s'),()=>{ closeCtx(); cycleAlt(info.mid,1); });
+    mk('📌 Pin to her memory',()=>{ try{ facts['pinned_'+Date.now().toString(36)]=(e?(e.t||info.text):info.text||'').slice(0,200); queueSave(); toast('she will remember that'); }catch(_){} closeCtx(); });
+    mk('🚩 Flag reply (hide + redo)',async()=>{ closeCtx(); try{ row.style.display='none'; }catch(_){} await regenHer(info.mid); try{row.style.display='';}catch(_){} });
+    mk('✕ Cancel',()=>closeCtx());
+    document.getElementById('ctxSheet').classList.add('on'); pushLayer();
+  }catch(e){}
+}
+function closeCtx(){ try{ document.getElementById('ctxSheet').classList.remove('on'); }catch(e){} }
+try{ document.getElementById('ctxSheet').onclick=e=>{ if(e.target.id==='ctxSheet') closeCtx(); }; }catch(e){}
+async function regenHer(mid){
+  try{
+    const e=findEntry(mid); if(!e||e.k!=='k') return;
+    const row=log.querySelector('.row[data-mid="'+mid+'"]');
+    const m=e.who?roster.find(c=>c.id===e.who):activeChar();
+    if(!m) return;
+    const ms=isGroupMode()?membersOf(groupById(activeGroupId)):[m];
+    const sys=isGroupMode()?groupSystem(m,ms):charSystem(m);
+    const transcript=chatHistory.slice(-12).map(x=>(x.role==='user'?HIS_NAME:m.name)+': '+x.content).join('\n');
+    const te=addTypingBubble(m.name+' is rethinking');
+    let text='';
+    try{ text=String(await aiText(sys+'\n\nChat so far:\n'+transcript+'\n\n'+m.name+' (say it differently, same heat):')).slice(0,600); }
+    catch(_){ try{te.remove();}catch(__){} return; }
+    try{te.remove();}catch(_){}
+    text=text||e.t;
+    e.versions=e.versions||[e.t]; e.versions.push(text);
+    e.t=text; e.vi=e.versions.length-1; e.alts=e.versions.slice(0,-1); queueSave();
+    if(row){
+      row.dataset.text=text.slice(0,140);
+      const txt=row.querySelector('.txt');
+      if(txt){ txt.innerHTML=fmt(text); }
+      else {
+        const bub=row.querySelector('.bubble');
+        if(bub){ bub.innerHTML='<b class="name">'+esc(m.name)+'</b><button class="speakBtn" title="hear her say it">🔊</button>'+quoteHtml(e.r)+fmt(text)+'<span class="reacts"></span>';
+          const spk=bub.querySelector('.speakBtn'); if(spk) spk.onclick=()=>speakText(text,spk); }
+      }
+      queueSave(); paintReacts();
+    }
+    const h=[...chatHistory].reverse().find(x=>x.role==='assistant');
+    if(h) h.content=(isGroupMode()?m.name+': ':'')+text;
+    toast('regenerated ('+e.alts.length+' version'+(e.alts.length===1?'':'s')+' in long-press menu)');
+  }catch(e){}
+}
+function cycleAlt(mid,dir){
+  try{
+    const e=findEntry(mid); if(!e) return;
+    if(!e.versions||!e.versions.length){ if(!e.alts||!e.alts.length) return; e.versions=e.alts.concat([e.t]); }
+    const n=e.versions.length;
+    if(e.vi==null||e.vi<0||e.vi>=n) e.vi=n-1;
+    e.vi=((e.vi+dir)%n+n)%n;
+    const shown=e.versions[e.vi];
+    e.t=shown;
+    const row=log.querySelector('.row[data-mid="'+mid+'"]');
+    if(row){
+      row.dataset.text=String(shown).slice(0,140);
+      const txt=row.querySelector('.txt');
+      if(txt) txt.innerHTML=fmt(shown);
+      else { const bub=row.querySelector('.bubble');
+        if(bub){ bub.innerHTML='<b class="name">'+esc(row.dataset.name||'Her')+'</b><button class="speakBtn" title="hear her say it">🔊</button>'+quoteHtml(e.r)+fmt(shown)+'<span class="reacts"></span>';
+          const spk=bub.querySelector('.speakBtn'); if(spk) spk.onclick=()=>speakText(shown,spk); } }
+      paintReacts();
+    }
+    queueSave();
+  }catch(e){}
+}
+window.__regenHer=regenHer; window.__cycleAlt=cycleAlt;
+/* ==== batch 2b: memory, bond hearts, search, away card ==== */
+function bondLevel(c){ try{ if(c&&typeof c.bond==='number'){ window.bondEnsure(c); return Math.max(0,Math.min(10,Math.round(c.bond))); } if(c&&c.met===false) return 0; return 1; }catch(e){ return 0; } }
+function bondHearts(n){ let s=''; for(let i=0;i<10;i++) s+=i<n?'♥':'♡'; return s; }
+function relStatus(c){ try{ if(!c) return 'no one'; if(c.muted) return 'muted'; if(c.met===false) return 'stranger'; return interestStatus(bondNum(c)); }catch(e){ return ''; } }
+try{ window.relStatus=relStatus; }catch(e){}
+try{
+  const _bump2=bumpMeters;
+  bumpMeters=function(id,d){
+    let before=-1; try{ const c=roster.find(x=>x.id===id); if(c) before=bondLevel(c); }catch(e){}
+    const r=_bump2(id,d);
+    try{
+      const c=roster.find(x=>x.id===id); if(!c) return r;
+      const after=bondLevel(c);
+      if(after>before&&after%2===0&&!c['bondM'+after]){ c['bondM'+after]=true; try{saveDeck();}catch(e){}
+        const rewards={2:'she uses a nickname for you now',4:'she sent you a private greeting you will never forget',6:'she picked a signature outfit just for you',8:'she wants a group photo with the whole circle',10:'she is yours, completely — expect something unforgettable'};
+        toast('💗 Bond '+after+' with '+c.name+' — '+ (rewards[after]||'she adores you'));
+      }
+    }catch(e){}
+    return r;
+  };
+}catch(e){}
+try{
+  const _lf=learnFacts;
+  learnFacts=async function(){
+    let before=[];
+    try{ before=Object.keys(facts||{}); }catch(e){}
+    const r=await _lf();
+    try{
+      const after=Object.keys(facts||{});
+      const fresh=after.filter(k=>before.indexOf(k)<0);
+      if(fresh.length){

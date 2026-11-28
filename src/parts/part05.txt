@@ -1,0 +1,500 @@
+(function(){
+  const $=s=>document.querySelector(s);
+  function toast(t){ try{ const w=$('#toastWrap'); const d=document.createElement('div'); d.className='toast'; d.textContent=t; w.appendChild(d); setTimeout(()=>d.remove(),2600);}catch(e){} }
+  window.toast=toast;
+  let groups=[], activeGroupId=null, editingGroupId=null; window.__groupsLoading=true;
+  window.__groups=()=>groups; window.__activeGroup=()=>activeGroupId;
+  const isGroupMode=()=>!!activeGroupId;
+  window.__isGroup=isGroupMode;
+  const gStore=id=>root.chatSave['g_'+id];
+  function groupById(id){ return groups.find(g=>g.id===id)||null; }
+  function membersOf(g){ if(!g) return []; return (g.memberIds||[]).map(id=>roster.find(c=>c.id===id)).filter(Boolean); }
+  async function persistGroups(){ try{ await deckStore.set('groups',groups); }catch(e){} }
+  // wrap saveDeck to include groups
+  const _saveDeck=saveDeck;
+  saveDeck=async function(){ try{ if(!window.__groupsLoading) await deckStore.set('groups',groups); }catch(e){} return _saveDeck(); };
+  // wrap saveChat: branch on group mode
+  const _saveChat=saveChat;
+  saveChat=async function(){
+    try{
+      if(typeof restoring!=='undefined'&&restoring) return;
+      if(isGroupMode()){ const st=gStore(activeGroupId); await st.set('entries',savedEntries); await st.set('bg',{src:bgSrc,on:bgOn}); await st.set('facts',facts); return; }
+    }catch(e){}
+    return _saveChat();
+  };
+  // wrap galleryItems to include group snaps
+  const _galleryItems=galleryItems;
+  galleryItems=function(filter){
+    let out=_galleryItems(filter);
+    try{
+      for(const g of groups){
+        const arr=allChats['g_'+g.id]||[];
+        for(const e of arr){ if(e.k==='i'&&e.s&&e.sv){ const m=e.who?roster.find(c=>c.id===e.who):null; out.push({...e,charName:(m?m.name:g.name)+' · '+g.name,charId:(filter&&filter!=='all'&&filter!==('g_'+g.id)&&(e.who||'')!==filter)?'__hide':(e.who||('g_'+g.id)),gkey:'g_'+g.id}); } }
+      }
+      if(filter&&filter!=='all') out=out.filter(e=>e.charId===filter||e.charId==='g_'+filter||String(e.charId)===String(filter));
+    }catch(e){}
+    return out;
+  };
+  function renderGroups(){
+    const grid=$('#groupGrid'); if(!grid) return; grid.innerHTML='';
+    const gc=$('#groupCount'); if(gc) gc.textContent=groups.length?groups.length+' active':'';
+    groups.forEach(g=>{
+      const ms=membersOf(g);
+      const snaps=(allChats['g_'+g.id]||[]).filter(e=>e.k==='i').length;
+      const d=document.createElement('div'); d.className='gcard'+(g.id===activeGroupId?' active':'');
+      d.innerHTML='<div class="avs"></div><div class="gmeta"><b></b><span></span><div class="grow"><button data-a="chat">open chat</button><button data-a="edit" class="ghost">edit</button><button data-a="del" class="ghost">\u2715</button></div><div class="bsub" style="font-size:var(--fs-xs);color:var(--text-3);margin-top:var(--s-2)"></div></div>';
+      d.querySelector('b').textContent=g.name;
+      d.querySelector('span').textContent=ms.map(m=>m.name).join(' \u00b7 ')||'no members';
+      d.querySelector('.bsub').textContent=snaps+' group snaps';
+      const avs=d.querySelector('.avs');
+      ms.slice(0,4).forEach(m=>{ const im=document.createElement('img'); im.src=m.pfp||'src/images/kayla-pfp.jpg'; avs.appendChild(im); });
+      d.querySelector('[data-a="chat"]').onclick=()=>enterGroup(g.id);
+      d.querySelector('[data-a="edit"]').onclick=()=>openGroupModal(g.id);
+      d.querySelector('[data-a="del"]').onclick=async()=>{ if(!confirm('delete group '+g.name+'?')) return; await saveContext(); groups=groups.filter(x=>x.id!==g.id); delete allChats['g_'+g.id]; if(activeGroupId===g.id){ activeGroupId=null; await loadChar(activeId); syncHeader(); } await persistGroups(); renderGroups(); refreshGallery(); toast('group deleted'); };
+      grid.appendChild(d);
+    });
+  }
+  window.__renderGroups=renderGroups;
+  function openGroupModal(id){
+    editingGroupId=id||null;
+    const g=id?groupById(id):null;
+    $('#gTitle').textContent=g?('Edit '+g.name):'New group chat';
+    $('#gName').value=g?g.name:'';
+    const mp=$('#gMembers'); mp.innerHTML='';
+    roster.forEach(c=>{
+      const lab=document.createElement('label');
+      const on=g?(g.memberIds||[]).includes(c.id):false;
+      lab.innerHTML='<input type="checkbox" '+(on?'checked':'')+' style="accent-color:var(--girl)"> <span></span>';
+      lab.querySelector('span').textContent=c.name;
+      lab.querySelector('input').checked=on;
+      lab.dataset.id=c.id;
+      mp.appendChild(lab);
+    });
+    $('#groupModal').classList.add('on');
+  }
+  $('#gCancel').onclick=()=>$('#groupModal').classList.remove('on');
+  try{ const __ngb=$('#newGroupBtn'); if(__ngb) __ngb.onclick=()=>openGroupModal(null); }catch(e){}
+  try{ window.__openGroupModal=openGroupModal; }catch(e){}
+  $('#gSave').onclick=async()=>{
+    const name=$('#gName').value.trim()||('Group '+(groups.length+1));
+    const ids=[...document.querySelectorAll('#gMembers label')].filter(l=>l.querySelector('input').checked).map(l=>l.dataset.id);
+    if(ids.length<2){ toast('pick at least 2 girls'); return; }
+    if(editingGroupId){ const g=groupById(editingGroupId); Object.assign(g,{name,memberIds:ids}); }
+    else { const id='gr'+Date.now().toString(36); groups.push({id,name,memberIds:ids,createdAt:Date.now()}); allChats['g_'+id]=[]; }
+    $('#groupModal').classList.remove('on');
+    await persistGroups(); renderGroups(); toast('group saved');
+  };
+  async function saveContext(){
+    try{
+      try{ clearTimeout(saveTimer); }catch(e){}
+      if(typeof restoring!=='undefined'&&restoring) return;
+      if(isGroupMode()){ const st=gStore(activeGroupId); await st.set('entries',savedEntries); await st.set('bg',{src:bgSrc,on:bgOn}); await st.set('facts',facts); }
+      else { await _saveChat(); }
+    }catch(e){}
+  }
+  async function loadGroup(id){
+    const g=groupById(id); if(!g) return;
+    restoring=true;
+    try{
+      log.querySelectorAll('.row').forEach(r=>r.remove());
+      const st=gStore(id);
+      const entries=await st.get('entries'); const bg=await st.get('bg'); const f=await st.get('facts');
+      savedEntries=Array.isArray(entries)?entries.slice(-80):[];
+      allChats['g_'+id]=savedEntries;
+      facts=(f&&typeof f==='object'&&!Array.isArray(f))?f:{};
+      const bg2=bg&&typeof bg==='object'?bg:null;
+      if(bg2&&bg2.src){ bgSrc=bg2.src; bgOn=!!bg2.on; } else { bgSrc=null; bgOn=false; }
+      applyBg();
+      // rebuild chatHistory for transcript (user + group her lines with speaker names)
+      chatHistory=savedEntries.filter(e=>e.k==='u'||e.k==='k').map(e=>{
+        if(e.k==='u') return {role:'user',content:e.t};
+        const m=e.who?roster.find(c=>c.id===e.who):null;
+        return {role:'assistant',content:(m?m.name+': ':'')+e.t};
+      }).slice(-30);
+      for(const it of savedEntries.slice(-80)){
+        if(!it.id){ it.id=newMid(); it.ts=it.ts||Date.now(); }
+        if(it.k==='u') addUserBubble(it.t,it.id);
+        else if(it.k==='k'){ const m=it.who?roster.find(c=>c.id===it.who):membersOf(g)[0]; addHerBubbleAs(m,it.t,it.id); }
+        else if(it.k==='i'){ const m=it.who?roster.find(c=>c.id===it.who):null; addImageBubbleSilent(it.s,it,m,it.id); }
+      }
+      if(!savedEntries.length){
+        const ms=membersOf(g);
+        for(const m of ms){ const op=m.opener||'Hey.'; const oid=newMid(); addHerBubbleAs(m,op,oid); chatHistory.push({role:'assistant',content:m.name+': '+op}); savedEntries.push({k:'k',who:m.id,t:op,id:oid,ts:Date.now()}); }
+        queueSave();
+      }
+      syncGroupHeader(g);
+    } finally { restoring=false; }
+  }
+  window.__loadGroup=loadGroup;
+  function addHerBubbleAs(m,text,mid){
+    if(!m) return addHerBubble(text);
+    hideEmpty();
+    const row=document.createElement('div'); row.className='row her';
+    const ava=m.pfp||'src/images/kayla-pfp.jpg';
+    const id=mid||newMid();
+    row.dataset.mid=id; row.dataset.who=m.id; row.dataset.name=m.name; row.dataset.text=String(text).slice(0,140);
+    const rq=activeReply?quoteHtml(activeReply.mid):'';
+    row.innerHTML='<img class="mini"><div class="bubble"><b class="name"></b><button class="speakBtn" title="hear her say it">\uD83D\uDD0A</button>'+rq+'<span class="txt"></span><span class="reacts"></span></div>';
+    row.querySelector('.mini').src=ava;
+    row.querySelector('.name').textContent=m.name;
+    row.querySelector('.txt').innerHTML=fmt(text);
+    log.appendChild(row); scrollBottom();
+    const spk=row.querySelector('.speakBtn'); if(spk) spk.onclick=()=>speakText(text,spk);
+    if(!restoring && isGroupMode()){ savedEntries.push({k:'k',who:m.id,t:text,id,ts:Date.now(),r:activeReply?activeReply.mid:null}); trimSaved(); queueSave(); allChats['g_'+activeGroupId]=savedEntries; if(voiceAuto) speakText(text); }
+    return row;
+  }
+  window.__sayAs=addHerBubbleAs;
+  function syncGroupHeader(g){
+    if(!g) return syncHeader();
+    const ms=membersOf(g);
+    document.getElementById('headName').textContent=g.name;
+    document.getElementById('headSub').textContent=ms.map(m=>m.name).join(' \u00b7 ');
+    document.getElementById('headAva').src=(ms[0]&&(ms[0].pfp))||'src/images/kayla-pfp.jpg';
+    document.getElementById('emptyName').textContent=g.name;
+    document.getElementById('inp').placeholder='Message '+g.name+'…';
+    // group snap row
+    const row=document.getElementById('groupSnapRow'); if(row) row.hidden=false;
+    const sel=document.getElementById('snapWho'); if(sel){ sel.innerHTML=''; ms.forEach(m=>{ const o=document.createElement('option'); o.value=m.id; o.textContent='snap '+m.name; sel.appendChild(o); }); const o2=document.createElement('option'); o2.value='__solo'; o2.textContent='snap me a solo (first girl)'; sel.appendChild(o2); }
+    renderOutfitState(); renderEnvState();
+  }
+  // wrap solo header to hide group row
+  const _syncHeader=syncHeader;
+  syncHeader=function(){
+    if(isGroupMode()){ const g=groupById(activeGroupId); if(g) return syncGroupHeader(g); }
+    const r=document.getElementById('groupSnapRow'); if(r) r.hidden=true;
+    return _syncHeader();
+  };
+  // wrap addImageBubbleSilent to support member avatar
+  const _silent=addImageBubbleSilent;
+addImageBubbleSilent=function(src,meta,memberOverride){
+    if(memberOverride&&memberOverride.pfp){
+      hideEmpty();
+      const row=document.createElement('div'); row.className='row her';
+      row.innerHTML='<img class="mini"><div class="bubble"><b class="name"></b><img class="snap"></div>';
+      row.querySelector('.mini').src=memberOverride.pfp;
+      row.querySelector('.name').textContent=memberOverride.name;
+      row.querySelector('.snap').src=src;
+      try{ if(isGroupMode()){ const g=groupById(activeGroupId); const ms=membersOf(g); const gi=ms.findIndex(x=>x.id===memberOverride.id); if(gi>=0) row.classList.add('g'+(gi%4)); } }catch(e){}
+      log.appendChild(row); return row;
+    }
+    if(isGroupMode()&&meta&&meta.who){
+      const m=roster.find(c=>c.id===meta.who);
+      if(m) { hideEmpty(); const row=document.createElement('div'); row.className='row her'; row.innerHTML='<img class="mini"><div class="bubble"><b class="name"></b><img class="snap"></div>'; row.querySelector('.mini').src=m.pfp||'src/images/kayla-pfp.jpg'; row.querySelector('.name').textContent=m.name; row.querySelector('.snap').src=src; try{ const g=groupById(activeGroupId); const ms=membersOf(g); const gi=ms.findIndex(x=>x.id===m.id); if(gi>=0) row.classList.add('g'+(gi%4)); }catch(e){} log.appendChild(row); return row; }
+    }
+    return _silent(src,meta);
+  };
+try{
+  const _silentAll=addImageBubbleSilent;
+  addImageBubbleSilent=function(src,meta,memberOverride,mid){
+    const row=_silentAll(src,meta,memberOverride);
+    try{
+      try{ if(row&&!row.querySelector('.saveBtn')){ const bb=row.querySelector('.bubble'); if(bb){ const sb=document.createElement('button'); sb.className='saveBtn'; sb.textContent='save'; bb.appendChild(sb); } } if(row&&typeof wireSaveBtn==='function') wireSaveBtn(row); }catch(_){}
+      let gid=null;
+      if(memberOverride&&memberOverride.id) gid=memberOverride.id;
+      else if(meta&&meta.who) gid=meta.who;
+      else if(typeof activeId!=='undefined') gid=activeId;
+      if(row&&gid&&window.__attachShare) window.__attachShare(row,src,gid);
+      if(row&&mid) row.dataset.mid=mid;
+      else if(row&&meta&&meta.id) row.dataset.mid=meta.id;
+    }catch(e){}
+    return row;
+  };
+}catch(e){}
+  async function enterGroup(id){
+    if(activeGroupId!==id){ await saveContext(); activeGroupId=id; try{ await deckStore.set('activeGroupId',id); }catch(e){} await loadGroup(id); }
+    syncHeader(); switchTab('chat');
+  }
+  window.__enterGroup=enterGroup;
+  // wrap enterChat to clear group mode
+  const _enterChat=enterChat;
+  enterChat=async function(id){
+    if(activeGroupId){ await saveContext(); activeGroupId=null; try{ await deckStore.set('activeGroupId',null); }catch(e){} window.__skipSoloSave=(typeof activeId!=='undefined'&&activeId!==id); }
+    return _enterChat(id);
+  };
+  function memAmmo(t){
+  try{
+    const ms=((t&&t.mem)||[]).slice(-8);
+    if(!ms.length) return '';
+    return '\n\nYour ammo on the other girls (REAL things you and him did — when fighting a rival, deploy one filthy specific to humiliate her: brag what he did to YOUR body that he never did to hers. Generic jealousy loses):\n'+ms.map(m=>'- '+String(m).slice(0,140)).join('\n');
+  }catch(e){ return ''; }
+}
+function groupSystem(target,all){
+    const bios=all.map(m=>m.name+' — '+(m.tagline||'')+'\nLook: '+(m.look||'')+'\nWears now: '+(m.outfit||'')+'\nVoice: '+(m.personality||'').slice(0,900)).join('\n\n');
+    return 'Group chat with '+all.map(m=>m.name).join(', ')+' and him.\n\nGIRLS (stay in character, never swap bodies):\n'+bios+'\n\n'+worldBlock()+'You are '+target.name+'. Reply as '+target.name+' ONLY, one message under 130 words, present tense, *actions*, casual swearing ok. His name is Preston — call him by name sometimes, naturally. React to him AND the other girls (tease, get jealous, team up, play off their last lines) — and initiate too: ask him something, start something with another girl, push what you want. Never speak for him or for other girls. Horniness follows your lust meter, no permanent feral switch. Never mention, label, or discuss the meter. Compete openly for his attention — get jealous, interrupt, steal him away, team up against a rival, call other girls by name when you react to them. You may address another girl directly to flirt, fight, or team up — always circling back to him.'+(target.met===false?' FIRST MEETING: you have never met him (you know his name is Preston, nothing else) — no possessiveness, no jealousy, no pet names, no personal questions; size him up like a stranger, in character.':'')+(typeof agencyBlock==='function'?agencyBlock(target.id):'')+memAmmo(target);
+  }
+  async function sendGroup(){
+    const t=inp.value.trim(); if(!t) return;
+    const g=groupById(activeGroupId); if(!g) return;
+    const ms=membersOf(g); if(!ms.length){ toast('add girls to this group first'); return; }
+    inp.value=''; autoresize(); addUserBubble(t);
+    chatHistory.push({role:'user',content:t});
+    trimSaved(); queueSave(); allChats['g_'+g.id]=savedEntries;
+    sendBtn.disabled=true; snapBtn.disabled=true;
+    try{
+      const transcript=chatHistory.slice(-14).map(m=>(m.role==='user'?HIS_NAME:m.content)).join('\n');
+      const fb=factsBlock();
+      // every member replies once, in order — cap 4 to keep it fast
+      const responders=ms.slice(0,4);
+      for(const m of responders){
+        const typingEl=addTypingBubble(m.name+' is typing');
+        try{
+          const sys=groupSystem(m,ms);
+          const streamBox=document.createElement('span');
+          let firstChunkAt=0;
+          const out=await aiText({instruction:sys+'\n\nChat so far:\n'+transcript+(fb?'\n\nFacts:\n'+fb:'')+'\n\n'+m.name+':', onChunk:(d)=>{ try{ if(!firstChunkAt){ firstChunkAt=1; const ty=typingEl.querySelector('.typing'); if(ty) ty.remove(); const bub=typingEl.querySelector('.bubble'); if(bub) bub.appendChild(streamBox); } streamBox.textContent=d.fullTextSoFar; }catch(e){} }});
+          typingEl.remove();
+          const text=String(out).slice(0,500);
+          var __grow=null; try{ __grow=addHerBubbleAs(m,text); }catch(__ge){} try{ if(typeof window.reactTick==='function') window.reactTick(m.id,t,text,__grow); }catch(__re){} try{ if(typeof window.aiRate==='function') window.aiRate(m.id,t,text,__grow); }catch(__ae){}
+          chatHistory.push({role:'assistant',content:m.name+': '+text});
+          if(chatHistory.length>30) chatHistory=chatHistory.slice(-30);
+        }catch(e){ typingEl.remove(); }
+      }
+      await learnFacts();
+      refreshGallery();
+    }catch(e){ addErrorBubble('[group error: '+(e&&e.message?e.message:e)+']'); }
+    finally { sendBtn.disabled=false; snapBtn.disabled=false; }
+  }
+  // intercept send/snap buttons
+  const _sendHandler=sendBtn.onclick;
+  sendBtn.onclick=(e)=>{ if(isGroupMode()) return sendGroup(); return send(); };
+  // group snap: solo-member snap reuses engine with member override
+  async function snapMemberInGroup(memberId){
+    const g=groupById(activeGroupId); const m=roster.find(c=>c.id===memberId)||membersOf(g)[0];
+    if(!m){ toast('pick a girl first'); return; }
+    // temporarily fake activeChar by swapping activeId? safer: call solo snap logic with override via window hook
+    window.__forceMember=m;
+    try{ await snap(); } finally { window.__forceMember=null; }
+  }
+  // wrap snap to support forced member in group
+  const _activeChar=activeChar;
+  activeChar=function(){
+    if(window.__forceMember) return window.__forceMember;
+    if(isGroupMode()){ const g=groupById(activeGroupId); const ms=membersOf(g); return ms[0]||null; }
+    return _activeChar();
+  };
+  // group pic: everyone in one frame
+  async function snapGroupPic(){
+    const g=groupById(activeGroupId); if(!g) return;
+    const ms=membersOf(g).slice(0,3);
+    const __myGp=activeGroupId;
+    if(ms.length<2){ toast('need 2+ girls for a group pic'); return; }
+    snapBtn.disabled=true;
+    const loadingEl=addSnapLoadingBubble();
+    try{
+      const locks=ms.map(m=>identityLockFor(m,'CLOTHED')).join(', ');
+      const names=ms.map(m=>m.name).join(' and ');
+      const looks=ms.map(m=>m.name+': '+(m.look||'')).join('; ');
+      const outfits=ms.map(m=>m.name+' wears '+(facts['outfit_'+m.id]||m.outfit||'')).join('; ');
+      const n=ms.length;
+      const prompt=(locks+', exactly '+n+'girls, no more, no extra people, no duplicates, each girl appears exactly once, group selfie, one of them holding a smartphone at arms length toward viewer, '+names+' standing shoulder to shoulder in a row left to right, playful poses, arms around each other, '+looks+', '+outfits+', '+envBlockSafe()+', '+POV_LOCK+', '+QUALITY).slice(0,1500);
+      const res='768x512';
+      let negFull=negFor(ms,'CLOTHED',{});
+      const seed=Math.floor(Math.random()*2147483647);
+      const result=await image(prompt,{resolution:res,negativePrompt:negFull,seed,guidanceScale:8});
+      let src=result&&result.dataUrl?result.dataUrl:String(result); assertImg(src);
+      if(typeof __ctxKey==='function'&&__ctxKey()!=='g:'+__myGp){ try{loadingEl.remove();}catch(_e){} try{ if(typeof __stashImg==='function') await __stashImg('g:'+__myGp,ms[0].id,src,{p:prompt,n:negFull,r:res,w:seed},null); }catch(_e){} return; }
+      loadingEl.remove();
+      // save as group entry with all member ids in text
+      hideEmpty();
+      const row=document.createElement('div'); row.className='row her';
+      row.innerHTML='<img class="mini"><div class="bubble"><b class="name"></b><img class="snap"><div class="fixnote">group pic \u2014 '+names+'</div></div>';
+      row.querySelector('.mini').src=ms[0].pfp||'src/images/kayla-pfp.jpg';
+      row.querySelector('.name').textContent=g.name;
+      row.querySelector('.snap').src=src;
+      log.appendChild(row); scrollBottom();
+      savedEntries.push({k:'i',s:src,who:ms[0].id,group:g.id,p:prompt,n:negFull,r:res,w:seed}); trimSaved(); queueSave(); allChats['g_'+g.id]=savedEntries;
+      gstats.snaps++; saveGoon(); refreshGallery(); toast('group pic snapped');
+    }catch(e){ try{loadingEl.remove();}catch(_){} addErrorBubble('[group pic error: '+(e&&e.message?e.message:e)+']'); }
+    finally { snapBtn.disabled=false; }
+  }
+  function envBlockSafe(){ try{ return facts.env_desc?('same room: '+String(facts.env_desc).slice(0,200)):'cozy loft room'; }catch(e){ return 'cozy loft room'; } }
+  const _snap=snap;
+  snap=async function(){
+    if(isGroupMode()&&!window.__forceMember){
+      const sel=document.getElementById('snapWho');
+      const v=sel?sel.value:null;
+      const g=groupById(activeGroupId); const ms=membersOf(g);
+      if(v&&ms.find(m=>m.id===v)) return snapMemberInGroup(v);
+      return snapMemberInGroup((ms[0]||{}).id);
+    }
+    return _snap();
+  };
+  const sg=$('#snapGroupBtn'); if(sg) sg.onclick=()=>snapGroupPic();
+  // deck tab also renders groups
+  const _renderDeck=renderDeck;
+  renderDeck=function(){ const r=_renderDeck(); try{ renderGroups(); }catch(e){} return r; };
+  // boot groups after solo boot
+  (async()=>{
+    try{
+      await new Promise(r=>setTimeout(r,600));
+      const gs=await deckStore.get('groups'); if(Array.isArray(gs)) groups=gs;
+      const ag=await deckStore.get('activeGroupId'); if(ag&&groups.find(g=>g.id===ag)){ /* stay solo by default, user opens group manually */ }
+      for(const g of groups){ try{ const st=gStore(g.id); const e=await st.get('entries'); allChats['g_'+g.id]=Array.isArray(e)?e.slice(-80):[]; }catch(e){ allChats['g_'+g.id]=allChats['g_'+g.id]||[]; } }
+      try{ window.__groupsLoading=false; }catch(e){}
+      renderGroups(); refreshGallery();
+    }catch(e){ try{ window.__groupsLoading=false; }catch(_){} }
+  /* ==== anime-girl-heaven core: unread, mute, member sheet, dots, palette ==== */
+let unread={};
+try{ deckStore.get('unread').then(u=>{ if(u&&typeof u==='object'){ unread=u; try{paintDots();}catch(e){} try{renderDeck();}catch(e){} } }); }catch(e){}
+function saveUnread(){ try{ deckStore.set('unread',unread); }catch(e){} }
+try{ window.__saveUnread=saveUnread; window.__unreadBox=function(){ return unread; }; }catch(e){}
+function clearUnread(id){ if(!id||!unread[id]) return; delete unread[id]; saveUnread(); try{renderDeck();}catch(e){} try{paintDots();}catch(e){} try{renderGroups();}catch(e){} }
+const _ecA=enterChat;
+enterChat=async function(id){ const r=await _ecA(id); try{clearUnread(id);}catch(e){} return r; };
+const _egA=enterGroup;
+enterGroup=async function(id){ const r=await _egA(id); try{clearUnread('g_'+id);}catch(e){} return r; };
+try{ window.toggleMute=toggleMute; }catch(e){}
+function toggleMute(id){ const c=roster.find(x=>x.id===id); if(!c) return; c.muted=!c.muted; saveDeck(); syncMuteBtn(); try{renderDeck();}catch(e){} try{ if(document.getElementById('memberSheet').classList.contains('on')){ const g=groupById(activeGroupId); if(g) renderMemberSheet(g); } }catch(e){} toast(c.name+(c.muted?' muted — total silence from her':' unmuted — she missed you')); }
+function syncMuteBtn(){ const b=document.getElementById('muteBtn'); if(!b) return; if(isGroupMode()){ b.textContent='👥'; b.classList.remove('muted'); b.title='Group members'; } else { const c=activeChar(); b.textContent=(c&&c.muted)?'🔕':'🔔'; b.classList.toggle('muted',!!(c&&c.muted)); b.title=(c&&c.muted)?('Unmute '+c.name):('Mute '+((c&&c.name)||'her')+' — stops her random texts + group chatter'); } }
+function paintDots(){ try{ const sw=document.getElementById('girlSwitch'); if(!sw) return; sw.querySelectorAll('button').forEach(b=>{ const n=unread[b.dataset.id]||0; let d=b.querySelector('.dot'); if(n>0){ if(!d){ d=document.createElement('span'); d.className='dot'; b.appendChild(d); } d.textContent=n>9?'9+':n; } else if(d){ d.remove(); } }); }catch(e){} }
+/* script-2 wraps deferred until OBSESSION script runs */
+const _rdM2=renderDeck;
+renderDeck=function(){ const r=_rdM2(); try{
+  document.querySelectorAll('#rosterGrid .bitch').forEach(card=>{
+    const nm=(card.querySelector('.bmeta b')||{}).textContent||'';
+    const c=roster.find(x=>x.name===nm); if(!c) return;
+    const n=unread[c.id]||0;
+    let ub=card.querySelector('.unreadbadge');
+    if(n>0){ if(!ub){ ub=document.createElement('div'); ub.className='unreadbadge'; card.prepend(ub); } ub.textContent='💬 '+n; ub.hidden=false; } else if(ub){ ub.hidden=true; }
+
+  });
+}catch(e){} return r; };
+const _rg2=renderGroups;
+renderGroups=function(){ const r=_rg2(); try{
+  const cards=[...document.querySelectorAll('#groupGrid .gcard')];
+  cards.forEach((card,i)=>{ const g=groups[i]; if(!g) return;
+    const key='g_'+g.id; const n=unread[key]||0;
+    let ub=card.querySelector('.unreadbadge');
+    if(n>0){ if(!ub){ ub=document.createElement('div'); ub.className='unreadbadge'; card.appendChild(ub); } ub.textContent='💬 '+n; ub.hidden=false; } else if(ub){ ub.hidden=true; }
+    const arr=allChats[key]||[];
+    const last=[...arr].reverse().find(e=>e.k==='u'||e.k==='k'||e.k==='i');
+    let prev='no chat yet';
+    if(last){ prev=last.k==='u'?'You: '+String(last.t).slice(0,48):(last.k==='k'?(((roster.find(c=>c.id===last.who)||{}).name)||'Her')+': '+String(last.t).slice(0,48):'📸 snap'); }
+    const sub=card.querySelector('.bsub'); if(sub){ sub.textContent=arr.filter(e=>e.k==='i').length+' snaps • '+prev; }
+  });
+}catch(e){} return r; };
+function renderMemberStack(g){ const st=document.getElementById('memberStack'); if(!st) return; if(!g){ st.hidden=true; return; } const ms=membersOf(g); st.innerHTML=''; st.hidden=false; ms.slice(0,4).forEach(m=>{ const im=document.createElement('img'); im.className='mav'; im.src=m.pfp||'src/images/kayla-pfp.jpg'; im.title=m.name+(m.muted?' (muted)':''); im.style.opacity=m.muted?'.45':'1'; st.appendChild(im); }); if(ms.length>4){ const sp=document.createElement('span'); sp.className='more'; sp.textContent='+'+(ms.length-4); st.appendChild(sp); } st.onclick=()=>openMemberSheet(); }
+const _sgh2=syncGroupHeader;
+syncGroupHeader=function(g){ const r=_sgh2(g); try{ renderMemberStack(g); const hn=document.getElementById('headName'); hn.style.cursor='pointer'; hn.title='Group members'; hn.onclick=()=>openMemberSheet(); }catch(e){} return r; };
+const _shM2=syncHeader;
+syncHeader=function(){ const r=_shM2(); try{ syncMuteBtn(); if(!isGroupMode()){ const st=document.getElementById('memberStack'); if(st) st.hidden=true; const hn=document.getElementById('headName'); if(hn){ hn.onclick=null; hn.style.cursor=''; hn.title=''; } } }catch(e){} return r; };
+document.getElementById('muteBtn').onclick=()=>{ try{ if(isGroupMode()) openMemberSheet(); else if(activeChar()) toggleMute(activeChar().id); }catch(e){} };
+function openMemberSheet(){ const g=groupById(activeGroupId); if(!g){ toast('open a group chat first'); return; } renderMemberSheet(g); document.getElementById('memberSheet').classList.add('on'); }
+function closeMemberSheet(){ document.getElementById('memberSheet').classList.remove('on'); }
+function renderMemberSheet(g){ if(!g) return;
+  document.getElementById('msTitle').textContent=g.name+' — members';
+  const ms=membersOf(g);
+  const rows=document.getElementById('msRows'); rows.innerHTML='';
+  ms.forEach(m=>{
+    const d=document.createElement('div'); d.className='mrow';
+    d.innerHTML='<img><div class="minfo"><b></b><span></span></div>';
+    d.querySelector('img').src=m.pfp||'src/images/kayla-pfp.jpg';
+    d.querySelector('b').textContent=m.name+' '+(m.orbs||0)+(m.muted?' (muted)':'');
+    let info=(m.tagline||'');
+    try{ const w=facts['outfit_'+m.id]||m.outfit; if(w) info+=' • '+String(w).slice(0,60); }catch(e){}
+    d.querySelector('span').textContent=info;
+    const mk=(label,title,fn,off)=>{ const b=document.createElement('button'); b.textContent=label; b.title=title; if(off) b.classList.add('off'); b.onclick=fn; d.appendChild(b); return b; };
+    mk(m.muted?'🔕':'🔔',m.muted?('unmute '+m.name):('mute '+m.name+' — total silence'),()=>{ toggleMute(m.id); const gg=groupById(activeGroupId); if(gg) renderMemberSheet(gg); },!m.muted);
+    mk('📸','snap '+m.name+' solo',()=>{ closeMemberSheet(); try{snapMemberInGroup(m.id);}catch(e){} });
+    if(ms.length>2) mk('✕','kick '+m.name+' out',async()=>{ g.memberIds=g.memberIds.filter(id=>id!==m.id); await persistGroups(); try{syncGroupHeader(g);}catch(e){} const gg=groupById(activeGroupId); if(gg) renderMemberSheet(gg); toast(m.name+' left the chat'); });
+    else { const t=document.createElement('span'); t.className='tag'; t.textContent='min 2'; d.appendChild(t); }
+    rows.appendChild(d);
+  });
+  const add=document.getElementById('msAdd'); add.innerHTML='';
+  roster.filter(c=>!(g.memberIds||[]).includes(c.id)).forEach(c=>{
+    const d=document.createElement('div'); d.className='mrow';
+    d.innerHTML='<img><div class="minfo"><b></b><span></span></div>';
+    d.querySelector('img').src=c.pfp||'src/images/kayla-pfp.jpg';
+    d.querySelector('b').textContent=c.name;
+    d.querySelector('span').textContent=c.tagline||'';
+    const b=document.createElement('button'); b.textContent='+ add'; b.title='add '+c.name+' to this chat';
+    b.onclick=async()=>{ g.memberIds.push(c.id); await persistGroups(); try{ const op=c.opener||'Hey.'; addHerBubbleAs(c,op); chatHistory.push({role:'assistant',content:c.name+': '+op}); }catch(e){} try{syncGroupHeader(g);}catch(e){} renderMemberSheet(g); toast(c.name+' joined the chat'); };
+    d.appendChild(b); add.appendChild(d);
+  });
+  if(!add.children.length) add.innerHTML='<div style="font-size:var(--fs-xs);color:var(--text-3)">everyone is already here</div>';
+}
+document.getElementById('msClose').onclick=closeMemberSheet;
+document.getElementById('memberSheet').onclick=e=>{ if(e.target.id==='memberSheet') closeMemberSheet(); };
+document.getElementById('msPic').onclick=()=>{ closeMemberSheet(); try{snapGroupPic();}catch(e){} };
+document.getElementById('msLeave').onclick=async()=>{ try{ await saveContext(); }catch(e){} activeGroupId=null; try{ await deckStore.set('activeGroupId',null); }catch(e){} closeMemberSheet(); try{ await loadChar(activeId); }catch(e){} syncHeader(); switchTab('chat'); };
+const _asC=addHerBubbleAs;
+addHerBubbleAs=function(m,text){ const row=_asC(m,text); try{ if(m&&isGroupMode()){ const g=groupById(activeGroupId); const ms=membersOf(g); const i=ms.findIndex(x=>x.id===m.id); if(i>=0&&row) row.classList.add('g'+(i%4)); } }catch(e){} return row; };
+setTimeout(()=>{ try{ const _pt2=paintTheme; paintTheme=function(){ const r=_pt2(); try{paintDots();}catch(e){} return r; }; }catch(e){} try{ const _act2=actions; actions=function(){ const o=_act2(); try{ groups.forEach(g=>o.push({t:'Open group: '+g.name,hint:'group',fn:()=>enterGroup(g.id),ico:'✦'})); }catch(e){} return o; }; }catch(e){} },2500);
+try{ renderDeck(); }catch(e){}
+try{ renderGroups(); }catch(e){}
+try{ syncMuteBtn(); }catch(e){}
+try{ paintDots(); }catch(e){}
+/* ==== anime-girl-heaven engine: group v2 + ambient pings ==== */
+sendGroup=async function(){
+  const t=inp.value.trim(); if(!t) return;
+  const g=groupById(activeGroupId); if(!g) return;
+  const everyone=membersOf(g); if(!everyone.length){ toast('add girls to this group first'); return; }
+  const ms=everyone.filter(m=>!m.muted);
+  if(!ms.length){ toast('everyone here is muted — unmute someone'); return; }
+  inp.value=''; autoresize(); addUserBubble(t);
+  chatHistory.push({role:'user',content:t});
+  savedEntries.push({k:'u',t}); trimSaved(); queueSave(); allChats['g_'+g.id]=savedEntries;
+  sendBtn.disabled=true; snapBtn.disabled=true;
+  try{
+    const transcript=chatHistory.slice(-14).map(m=>(m.role==='user'?HIS_NAME:m.content)).join('\n');
+    const fb=factsBlock();
+    const lower=t.toLowerCase();
+    const addressed=ms.filter(m=>lower.includes(m.name.toLowerCase()));
+    const rest0=ms.filter(m=>!addressed.includes(m));
+    g._turn=(typeof g._turn==='number')?g._turn:0;
+    const off=rest0.length?(g._turn%rest0.length):0;
+    const rest=rest0.slice(off).concat(rest0.slice(0,off));
+    g._turn++;
+    try{ await persistGroups(); }catch(e){}
+    const responders=addressed.concat(rest).slice(0,3);
+    const __myG=(window.__activeGroup?window.__activeGroup():null);
+    try{ if(typeof activeReply!=='undefined'&&activeReply&&activeReply.mid){ const qe=findEntry(activeReply.mid); if(qe&&qe.who){ const qm=ms.find(x=>x.id===qe.who); if(qm&&!responders.includes(qm)){ responders.unshift(qm); responders.splice(3); } } } }catch(e){}
+    let bubbles=0;
+    for(const m of responders){
+      if(bubbles>=5) break;
+      bubbles++;
+      const typingEl=addTypingBubble(m.name+' is typing');
+      try{
+        const sys=groupSystem(m,ms);
+        const streamBox=document.createElement('span');
+        let firstChunkAt=0;
+        const out2=await aiText({instruction:sys+'\n\nChat so far:\n'+transcript+(fb?'\n\nFacts:\n'+fb:'')+(typeof replyCtx==='function'?replyCtx():'')+'\n\n'+m.name+':', onChunk:(d)=>{ try{ if(!firstChunkAt){ firstChunkAt=1; const ty=typingEl.querySelector('.typing'); if(ty) ty.remove(); const bub=typingEl.querySelector('.bubble'); if(bub) bub.appendChild(streamBox); } streamBox.textContent=d.fullTextSoFar; }catch(e){} }});
+        typingEl.remove();
+        const text=String(out2).slice(0,600);
+        if(typeof __ctxKey==='function'&&__ctxKey()!=='g:'+__myG){ try{ if(typeof __stashGroupText==='function') await __stashGroupText(__myG,m.id,text); }catch(_e){} continue; }
+        addHerBubbleAs(m,text);
+        chatHistory.push({role:'assistant',content:m.name+': '+text});
+        try{ noteExchange(m.id,t,text); }catch(e){} try{ if(window.AG&&window.AG.girls){ for(const __o of (typeof ms!=='undefined'?ms:[])){ if(__o&&__o.id!==m.id){ const __g=window.AG.girls[m.id]||(window.AG.girls[m.id]={met:true,knows:[]}); if(!__g.knows.includes(__o.id)) __g.knows.push(__o.id); } } try{localStorage.setItem('agh.ctx.v1',JSON.stringify(window.AG));}catch(e){} } }catch(e){}
+        if(chatHistory.length>30) chatHistory=chatHistory.slice(-30);
+        if(bubbles<5&&Math.random()<0.35){
+          const fresh=ms.filter(x=>x.id!==m.id&&!responders.includes(x));
+          const pool=fresh.length?fresh:ms.filter(x=>x.id!==m.id);
+          if(pool.length){
+            const r2=pool[Math.floor(Math.random()*pool.length)];
+            bubbles++;
+            const te2=addTypingBubble(r2.name+' is typing');
+            try{
+              const rout=await aiText('You are '+r2.name+' in a group chat with '+ms.map(x=>x.name).join(', ')+' and him. '+m.name+' just said: "'+text.slice(0,200)+'". React in 1-2 short sentences — tease her, get jealous, team up with her against someone, or steal his attention. Stay in character ('+(r2.tagline||'')+'), present tense, *actions* ok. Only your reaction, never speak for anyone else.');
+              te2.remove();
+              const rtext=String(rout).slice(0,220);
+              if(typeof __ctxKey==='function'&&__ctxKey()!=='g:'+__myG){ try{ if(typeof __stashGroupText==='function') await __stashGroupText(__myG,r2.id,rtext); }catch(_e){} }
+              else { addHerBubbleAs(r2,rtext); chatHistory.push({role:'assistant',content:r2.name+': '+rtext}); if(chatHistory.length>30) chatHistory=chatHistory.slice(-30); }
+            }catch(e){ try{te2.remove();}catch(_){} }
+          }
+        }
+      }catch(e){ try{typingEl.remove();}catch(_){} }
+    }
+    await learnFacts();
+    refreshGallery();
+  }catch(e){ addErrorBubble('[group error: '+(e&&e.message?e.message:e)+']'); }
+  finally { sendBtn.disabled=false; snapBtn.disabled=false; try{if(typeof clearReply==='function') clearReply();}catch(e){} }
+};
+let lastActivity=Date.now();
+['pointerdown','keydown'].forEach(ev=>document.addEventListener(ev,()=>{ lastActivity=Date.now(); try{window.__lastUserActive=Date.now();}catch(e){} },{passive:true}));
+function pingToast(c,text){
+  try{
+    const w=document.getElementById('toastWrap'); if(!w) return;
+    const d=document.createElement('div'); d.className='pingtoast';
+    d.innerHTML='<img><div><b></b><span></span></div>';
+    d.querySelector('img').src=c.pfp||'src/images/kayla-pfp.jpg';
+    d.querySelector('b').textContent=c.name+' • wants you';
